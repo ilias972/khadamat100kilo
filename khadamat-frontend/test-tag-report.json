@@ -1,0 +1,39 @@
+{
+  "summary": {
+    "totalTests": 40,
+    "multiTagTests": 2,
+    "multiTagPercentage": "5.0%",
+    "uniqueTags": 6,
+    "severity": "LOW"
+  },
+  "tagFrequency": {
+    "@api": 6,
+    "@smoke": 6,
+    "@regression": 20,
+    "@critical": 1,
+    "@performance": 4,
+    "@visual": 5
+  },
+  "multiTagViolations": [
+    {
+      "title": "services\\service-discovery.spec.ts:23:7 › Services Tests @smoke › Filter services by category",
+      "tags": [
+        "@smoke",
+        "@regression"
+      ],
+      "tagCount": 2
+    },
+    {
+      "title": "services\\service-discovery.spec.ts:39:7 › Services Tests @smoke › View service details",
+      "tags": [
+        "@smoke",
+        "@regression"
+      ],
+      "tagCount": 2
+    }
+  ],
+  "recommendations": [
+    "📊 MEDIUM: 2 tests need tag simplification. Review and consolidate tags.",
+    "🏷️  Top tags: @regression(20), @api(6), @smoke(6)"
+  ]
+}

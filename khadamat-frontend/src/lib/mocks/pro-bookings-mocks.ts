@@ -1,0 +1,124 @@
+export interface ProBooking {
+  id: string;
+  clientName: string;
+  serviceName: string;
+  date: string;
+  time: string;
+  location: string;
+  price: number;
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  clientAvatar: string;
+}
+
+export const mockProBookings: ProBooking[] = [
+  {
+    id: '1',
+    clientName: 'Ahmed Bennani',
+    serviceName: 'Réparation de plomberie',
+    date: '2024-12-01',
+    time: '14:00',
+    location: 'Casablanca',
+    price: 150,
+    status: 'pending',
+    clientAvatar: '/avatars/ahmed.jpg',
+  },
+  {
+    id: '2',
+    clientName: 'Fatima Alaoui',
+    serviceName: 'Installation électrique',
+    date: '2024-12-02',
+    time: '10:30',
+    location: 'Rabat',
+    price: 200,
+    status: 'confirmed',
+    clientAvatar: '/avatars/fatima.jpg',
+  },
+  {
+    id: '3',
+    clientName: 'Youssef Tazi',
+    serviceName: 'Peinture intérieure',
+    date: '2024-11-28',
+    time: '16:00',
+    location: 'Marrakech',
+    price: 300,
+    status: 'completed',
+    clientAvatar: '/avatars/youssef.jpg',
+  },
+  {
+    id: '4',
+    clientName: 'Amina Idrissi',
+    serviceName: 'Jardinage complet',
+    date: '2024-12-05',
+    time: '09:00',
+    location: 'Fès',
+    price: 250,
+    status: 'pending',
+    clientAvatar: '/avatars/amina.jpg',
+  },
+  {
+    id: '5',
+    clientName: 'Karim El Fassi',
+    serviceName: 'Réparation de climatisation',
+    date: '2024-12-03',
+    time: '11:00',
+    location: 'Tanger',
+    price: 400,
+    status: 'confirmed',
+    clientAvatar: '/avatars/karim.jpg',
+  },
+  {
+    id: '6',
+    clientName: 'Leila Mansouri',
+    serviceName: 'Réparation de plomberie',
+    date: '2024-11-25',
+    time: '13:30',
+    location: 'Agadir',
+    price: 180,
+    status: 'completed',
+    clientAvatar: '/avatars/leila.jpg',
+  },
+  {
+    id: '7',
+    clientName: 'Omar Bouazza',
+    serviceName: 'Installation électrique',
+    date: '2024-12-04',
+    time: '15:00',
+    location: 'Meknès',
+    price: 220,
+    status: 'cancelled',
+    clientAvatar: '/avatars/omar.jpg',
+  },
+  {
+    id: '8',
+    clientName: 'Nadia Chraibi',
+    serviceName: 'Peinture intérieure',
+    date: '2024-12-06',
+    time: '08:00',
+    location: 'Oujda',
+    price: 350,
+    status: 'pending',
+    clientAvatar: '/avatars/nadia.jpg',
+  },
+  {
+    id: '9',
+    clientName: 'Hassan Alaoui',
+    serviceName: 'Jardinage complet',
+    date: '2024-12-07',
+    time: '12:00',
+    location: 'Casablanca',
+    price: 280,
+    status: 'confirmed',
+    clientAvatar: '/avatars/hassan.jpg',
+  },
+  {
+    id: '10',
+    clientName: 'Sara Bennani',
+    serviceName: 'Réparation de climatisation',
+    date: '2024-11-30',
+    time: '17:00',
+    location: 'Rabat',
+    price: 420,
+    status: 'completed',
+    clientAvatar: '/avatars/sara.jpg',
+  },
+];

@@ -1,0 +1,92 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { AuthService } from './auth.service';
+import { PrismaService } from '../../common/prisma.service';
+import { EmailService } from './email.service';
+import { JwtService } from '@nestjs/jwt';
+
+describe('AuthService', () => {
+  let service: AuthService;
+  let prismaService: PrismaService;
+  let emailService: EmailService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        AuthService,
+        {
+          provide: PrismaService,
+          useValue: {
+            user: {
+              findFirst: jest.fn(),
+              create: jest.fn(),
+              findUnique: jest.fn(),
+              update: jest.fn(),
+            },
+          },
+        },
+        {
+          provide: EmailService,
+          useValue: {
+            sendEmailVerification: jest.fn(),
+          },
+        },
+        {
+          provide: JwtService,
+          useValue: {
+            sign: jest.fn(),
+          },
+        },
+      ],
+    }).compile();
+
+    service = module.get<AuthService>(AuthService);
+    prismaService = module.get<PrismaService>(PrismaService);
+    emailService = module.get<EmailService>(EmailService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  describe('signup', () => {
+    it('should create a user and send verification email', async () => {
+      const mockUser = {
+        id: '1',
+        email: 'test@example.com',
+        roles: ['client'],
+        clientProfile: { firstName: 'John', lastName: 'Doe' },
+      };
+
+      jest.spyOn(prismaService.user, 'findFirst').mockResolvedValue(null);
+      jest.spyOn(prismaService.user, 'create').mockResolvedValue(mockUser as any);
+      jest.spyOn(emailService, 'sendEmailVerification').mockResolvedValue();
+
+      const result = await service.signup({
+        email: 'test@example.com',
+        phone: '1234567890',
+        password: 'password123',
+        role: 'client',
+        firstName: 'John',
+        lastName: 'Doe',
+      });
+
+      expect(result.user).toEqual(mockUser);
+      expect(emailService.sendEmailVerification).toHaveBeenCalled();
+    });
+
+    it('should throw conflict exception if user exists', async () => {
+      jest.spyOn(prismaService.user, 'findFirst').mockResolvedValue({ id: '1' } as any);
+
+      await expect(
+        service.signup({
+          email: 'test@example.com',
+          phone: '1234567890',
+          password: 'password123',
+          role: 'client',
+          firstName: 'John',
+          lastName: 'Doe',
+        }),
+      ).rejects.toThrow('User already exists');
+    });
+  });
+});

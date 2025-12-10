@@ -1,0 +1,15 @@
+{
+  "sensitivity": "high",
+  "baselinePeriod": "7_days",
+  "alertThreshold": 10,
+  "metrics": [
+    "homepageLoadTime",
+    "servicesPageLoadTime",
+    "loginPageLoadTime",
+    "apiAuthResponseTime",
+    "apiServicesResponseTime",
+    "lcp",
+    "fid",
+    "cls"
+  ]
+}

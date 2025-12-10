@@ -1,0 +1,24 @@
+{
+  "name": "email",
+  "type": "email",
+  "enabled": true,
+  "configuration": {
+    "smtpServer": "smtp.example.com",
+    "port": 587,
+    "from": "monitoring@example.com",
+    "to": [
+      "performance-team@example.com",
+      "devops@example.com"
+    ],
+    "subjectPrefix": "[PERFORMANCE ALERT]"
+  },
+  "notificationSettings": {
+    "repeatInterval": "1_hour",
+    "maxRepeats": 3,
+    "quietHours": {
+      "enabled": true,
+      "start": "22:00",
+      "end": "08:00"
+    }
+  }
+}

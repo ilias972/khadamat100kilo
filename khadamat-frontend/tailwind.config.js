@@ -1,0 +1,182 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const typography_1 = require("./lib/design-tokens/typography");
+const spacing_1 = require("./lib/design-tokens/spacing");
+const borders_1 = require("./lib/design-tokens/borders");
+const config = {
+    content: [
+        './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
+        './src/components/**/*.{js,ts,jsx,tsx,mdx}',
+        './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    ],
+    theme: {
+        extend: {
+            colors: {
+                primary: {
+                    50: '#fff7ed',
+                    100: '#ffedd5',
+                    200: '#fed7aa',
+                    300: '#fdba74',
+                    400: '#fb923c',
+                    500: '#F97B22',
+                    600: '#ea580c',
+                    700: '#c2410c',
+                    800: '#9a3412',
+                    900: '#7c2d12',
+                },
+                secondary: {
+                    50: '#fff7ed',
+                    100: '#ffedd5',
+                    200: '#fed7aa',
+                    300: '#fdba74',
+                    400: '#fb923c',
+                    500: '#FFA559',
+                    600: '#e8954a',
+                    700: '#d97706',
+                    800: '#b45309',
+                    900: '#92400e',
+                },
+                background: {
+                    DEFAULT: '#FAF7F2',
+                    secondary: '#EDEEEF',
+                    tertiary: '#f1f5f9',
+                },
+                surface: {
+                    DEFAULT: '#EDEEEF',
+                    secondary: '#EDEEEF',
+                    tertiary: '#f1f5f9',
+                },
+                text: {
+                    primary: '#3B3B3B',
+                    secondary: '#6B7280',
+                    muted: '#9CA3AF',
+                    placeholder: '#9CA3AF',
+                    inverse: '#ffffff',
+                },
+                border: {
+                    light: '#E5E7EB',
+                    medium: '#D1D5DB',
+                    dark: '#9CA3AF',
+                },
+                success: {
+                    50: '#f0fdf4',
+                    100: '#dcfce7',
+                    200: '#bbf7d0',
+                    300: '#86efac',
+                    400: '#4ade80',
+                    500: '#22c55e',
+                    600: '#16a34a',
+                    700: '#15803d',
+                    800: '#166534',
+                    900: '#14532d',
+                },
+                warning: {
+                    50: '#fffbeb',
+                    100: '#fef3c7',
+                    200: '#fde68a',
+                    300: '#fcd34d',
+                    400: '#fbbf24',
+                    500: '#f59e0b',
+                    600: '#d97706',
+                    700: '#b45309',
+                    800: '#92400e',
+                    900: '#78350f',
+                },
+                error: {
+                    50: '#fef2f2',
+                    100: '#fee2e2',
+                    200: '#fecaca',
+                    300: '#fca5a5',
+                    400: '#f87171',
+                    500: '#ef4444',
+                    600: '#dc2626',
+                    700: '#b91c1c',
+                    800: '#991b1b',
+                    900: '#7f1d1d',
+                },
+                accent: {
+                    50: '#fef3c7',
+                    100: '#fde68a',
+                    200: '#fcd34d',
+                    300: '#fbbf24',
+                    400: '#f59e0b',
+                    500: '#d97706',
+                    600: '#b45309',
+                    700: '#92400e',
+                    800: '#78350f',
+                    900: '#451a03',
+                },
+            },
+            fontFamily: {
+                'heading': [...typography_1.typography.fonts.heading],
+                'body': [...typography_1.typography.fonts.body],
+                'arabic': [...typography_1.typography.fonts.arabic],
+            },
+            fontSize: {
+                'display': [typography_1.typography.sizes.display.fontSize, typography_1.typography.sizes.display.lineHeight],
+                'h1': [typography_1.typography.sizes.h1.fontSize, typography_1.typography.sizes.h1.lineHeight],
+                'h2': [typography_1.typography.sizes.h2.fontSize, typography_1.typography.sizes.h2.lineHeight],
+                'h3': [typography_1.typography.sizes.h3.fontSize, typography_1.typography.sizes.h3.lineHeight],
+                'h4': [typography_1.typography.sizes.h4.fontSize, typography_1.typography.sizes.h4.lineHeight],
+                'body': [typography_1.typography.sizes.body.fontSize, typography_1.typography.sizes.body.lineHeight],
+                'small': [typography_1.typography.sizes.small.fontSize, typography_1.typography.sizes.small.lineHeight],
+                'caption': [typography_1.typography.sizes.caption.fontSize, typography_1.typography.sizes.caption.lineHeight],
+            },
+            fontWeight: {
+                regular: typography_1.typography.weights.regular,
+                medium: typography_1.typography.weights.medium,
+                semibold: typography_1.typography.weights.semibold,
+                bold: typography_1.typography.weights.bold,
+            },
+            spacing: spacing_1.spacing,
+            borderRadius: borders_1.borders.radius,
+            boxShadow: {
+                ...borders_1.borders.shadows,
+                'inner': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
+                'focus': '0 0 0 3px rgba(249, 123, 34, 0.1)',
+            },
+            letterSpacing: {
+                'display': typography_1.typography.sizes.display.letterSpacing,
+                'h1': typography_1.typography.sizes.h1.letterSpacing,
+                'h2': typography_1.typography.sizes.h2.letterSpacing,
+                'h3': typography_1.typography.sizes.h3.letterSpacing,
+                'h4': typography_1.typography.sizes.h4.letterSpacing,
+                'body': typography_1.typography.sizes.body.letterSpacing,
+                'small': typography_1.typography.sizes.small.letterSpacing,
+                'caption': typography_1.typography.sizes.caption.letterSpacing,
+            },
+            animation: {
+                'fade-in': 'fadeIn 0.3s ease-in-out',
+                'slide-in': 'slideIn 0.3s ease-out',
+                'bounce-once': 'bounceOnce 0.6s ease-out',
+                'scale-in': 'scaleIn 0.2s ease-out',
+                'glow': 'glow 2s ease-in-out infinite alternate',
+            },
+            keyframes: {
+                fadeIn: {
+                    '0%': { opacity: '0' },
+                    '100%': { opacity: '1' },
+                },
+                slideIn: {
+                    '0%': { transform: 'translateY(-10px)', opacity: '0' },
+                    '100%': { transform: 'translateY(0)', opacity: '1' },
+                },
+                bounceOnce: {
+                    '0%, 100%': { transform: 'translateY(0)' },
+                    '50%': { transform: 'translateY(-4px)' },
+                },
+                scaleIn: {
+                    '0%': { transform: 'scale(0.95)', opacity: '0' },
+                    '100%': { transform: 'scale(1)', opacity: '1' },
+                },
+                glow: {
+                    '0%': { boxShadow: '0 0 5px rgba(249, 123, 34, 0.5)' },
+                    '100%': { boxShadow: '0 0 20px rgba(249, 123, 34, 0.8)' },
+                },
+            },
+        },
+    },
+    plugins: [],
+};
+exports.default = config;
+//# sourceMappingURL=tailwind.config.js.map

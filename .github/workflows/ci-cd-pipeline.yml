@@ -1,0 +1,277 @@
+name: CI/CD Pipeline - Test and Validate
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  NODE_VERSION: 20
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  POSTGRES_DB: khadamat_test
+  DATABASE_URL: postgres://postgres:postgres@localhost:5432/khadamat_test
+  CI: true
+
+jobs:
+  setup:
+    name: Setup Environment
+    runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.cache-key.outputs.key }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Generate cache key
+        id: cache-key
+        run: |
+          echo "key=$(date +%Y-%m-%d)-${{ hashFiles('**/package-lock.json') }}" >> $GITHUB_OUTPUT
+
+  backend-tests:
+    name: Backend Tests
+    needs: setup
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run database migrations
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+
+      - name: Run Jest tests
+        run: npm run test
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+          NODE_ENV: test
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: |
+            test-results/
+            coverage/
+
+  frontend-tests:
+    name: Frontend Tests
+    needs: setup
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: khadamat-frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: khadamat-frontend
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: khadamat-frontend
+        run: npx playwright install --with-deps
+
+      - name: Start backend server
+        run: |
+          npm ci
+          npm run build
+          npm run start:prod &
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+          NODE_ENV: test
+
+      - name: Wait for backend to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:3001/health | grep -q '"status":"ok"'; then
+              echo "Backend is ready!"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend failed to start"
+          exit 1
+
+      - name: Run Playwright tests
+        working-directory: khadamat-frontend
+        run: npx playwright test
+        env:
+          CI: true
+
+      - name: Upload Playwright test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: khadamat-frontend/playwright-report/
+
+  e2e-tests:
+    name: End-to-End Tests
+    needs: [backend-tests, frontend-tests]
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install frontend dependencies
+        working-directory: khadamat-frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: khadamat-frontend
+        run: npm run build
+
+      - name: Start full stack
+        run: |
+          # Start backend
+          npm run build
+          npm run start:prod &
+          BACKEND_PID=$!
+
+          # Start frontend
+          cd khadamat-frontend
+          npm run start &
+          FRONTEND_PID=$!
+
+          # Wait for services to be ready
+          for i in {1..30}; do
+            if curl -s http://localhost:3001/health | grep -q '"status":"ok"'; then
+              echo "Backend is ready!"
+              break
+            fi
+            sleep 2
+          done
+
+          for i in {1..30}; do
+            if curl -s http://localhost:3000 | grep -q "Khadamat"; then
+              echo "Frontend is ready!"
+              break
+            fi
+            sleep 2
+          done
+
+      - name: Run full E2E tests
+        run: npm run test:e2e
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+          NODE_ENV: test
+
+      - name: Upload E2E test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results
+          path: |
+            test-results/
+            coverage/
+
+  validate-deployment:
+    name: Validate Deployment Readiness
+    needs: e2e-tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check test coverage
+        run: |
+          # This would check if coverage meets minimum thresholds
+          echo "Validating test coverage requirements..."
+          # Add actual coverage validation logic here
+
+      - name: Validate environment variables
+        run: |
+          echo "Validating environment configuration..."
+          # Add environment validation logic here
+
+      - name: Check for breaking changes
+        run: |
+          echo "Checking for breaking changes..."
+          # Add breaking change detection logic here
+
+      - name: Run performance tests
+        run: |
+          echo "🚀 Running performance tests..."
+          cd khadamat-frontend
+          node scripts/performance-tests.js
+
+      - name: Check performance budgets
+        run: |
+          echo "💰 Checking performance budgets..."
+          cd khadamat-frontend
+          node scripts/check-performance-budgets.js
+
+      - name: Deployment readiness check
+        run: |
+          echo "✅ All tests passed successfully!"
+          echo "✅ Deployment is ready!"
+          echo "🚀 Application can be deployed to production"

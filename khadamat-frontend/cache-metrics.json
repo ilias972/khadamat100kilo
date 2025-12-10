@@ -1,0 +1,92 @@
+{
+  "metrics": [
+    {
+      "timestamp": "2025-12-08T19:21:57.615Z",
+      "npmCache": {
+        "cacheHitRate": 0.8738732663009187,
+        "cacheSizeMB": 175,
+        "timeSavedSeconds": 51,
+        "estimatedSavingsPerRun": "0.42"
+      },
+      "playwrightCache": {
+        "cacheHitRate": 0.8819962562169477,
+        "cacheSizeMB": 357,
+        "timeSavedSeconds": 80,
+        "estimatedSavingsPerRun": "0.67"
+      },
+      "overall": {
+        "overallCacheHitRate": 0.8496282777280053,
+        "totalTimeSavedSeconds": 140,
+        "totalSavingsPerRun": "1.16",
+        "estimatedAnnualSavings": "4234.00",
+        "efficiencyScore": "85.0"
+      }
+    },
+    {
+      "timestamp": "2025-12-08T19:21:57.629Z",
+      "npmCache": {
+        "cacheHitRate": 0.850675523430817,
+        "cacheSizeMB": 163,
+        "timeSavedSeconds": 56,
+        "estimatedSavingsPerRun": "0.47"
+      },
+      "playwrightCache": {
+        "cacheHitRate": 0.7610651614178484,
+        "cacheSizeMB": 337,
+        "timeSavedSeconds": 81,
+        "estimatedSavingsPerRun": "0.68"
+      },
+      "overall": {
+        "overallCacheHitRate": 0.9056300218579884,
+        "totalTimeSavedSeconds": 125,
+        "totalSavingsPerRun": "1.04",
+        "estimatedAnnualSavings": "3796.00",
+        "efficiencyScore": "90.6"
+      }
+    },
+    {
+      "timestamp": "2025-12-08T19:32:57.450Z",
+      "npmCache": {
+        "cacheHitRate": 0.8872897137485428,
+        "cacheSizeMB": 185,
+        "timeSavedSeconds": 58,
+        "estimatedSavingsPerRun": "0.48"
+      },
+      "playwrightCache": {
+        "cacheHitRate": 0.826790456767358,
+        "cacheSizeMB": 336,
+        "timeSavedSeconds": 82,
+        "estimatedSavingsPerRun": "0.68"
+      },
+      "overall": {
+        "overallCacheHitRate": 0.8669837769471997,
+        "totalTimeSavedSeconds": 122,
+        "totalSavingsPerRun": "1.02",
+        "estimatedAnnualSavings": "3723.00",
+        "efficiencyScore": "86.7"
+      }
+    },
+    {
+      "timestamp": "2025-12-08T19:32:57.472Z",
+      "npmCache": {
+        "cacheHitRate": 0.9039275276131805,
+        "cacheSizeMB": 192,
+        "timeSavedSeconds": 58,
+        "estimatedSavingsPerRun": "0.48"
+      },
+      "playwrightCache": {
+        "cacheHitRate": 0.8109815468205686,
+        "cacheSizeMB": 381,
+        "timeSavedSeconds": 72,
+        "estimatedSavingsPerRun": "0.60"
+      },
+      "overall": {
+        "overallCacheHitRate": 0.8613619470769118,
+        "totalTimeSavedSeconds": 115,
+        "totalSavingsPerRun": "0.96",
+        "estimatedAnnualSavings": "3504.00",
+        "efficiencyScore": "86.1"
+      }
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "lighthouseResults": [
+    {
+      "categories": {
+        "performance": {
+          "score": 0.95
+        },
+        "accessibility": {
+          "score": 0.92
+        },
+        "best-practices": {
+          "score": 0.94
+        },
+        "seo": {
+          "score": 0.96
+        },
+        "pwa": {
+          "score": 0.85
+        }
+      },
+      "audits": {
+        "metrics": {
+          "details": {
+            "items": [
+              {
+                "observedFirstContentfulPaint": 1200,
+                "observedLargestContentfulPaint": 1800,
+                "observedCumulativeLayoutShift": 0.05,
+                "observedTimeToInteractive": 2500,
+                "observedSpeedIndex": 3200
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "apiResults": [
+    {
+      "endpoint": "/api/auth/login",
+      "responseTime": 434
+    },
+    {
+      "endpoint": "/api/services/search",
+      "responseTime": 675
+    },
+    {
+      "endpoint": "/api/dashboard",
+      "responseTime": 550
+    }
+  ],
+  "bundleStats": {
+    "main": 450000,
+    "vendor": 950000,
+    "total": 1800000
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "hitRate": {
+    "critical": 0.7,
+    "high": 0.8,
+    "medium": 0.85
+  }
+}

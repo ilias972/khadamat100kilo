@@ -1,0 +1,22 @@
+{
+  "name": "slack",
+  "type": "slack",
+  "enabled": true,
+  "configuration": {
+    "webhookUrl": "https://hooks.slack.com/services/YOUR_WEBHOOK_URL",
+    "channel": "#performance-alerts",
+    "messageFormat": "full",
+    "mentions": [
+      "@performance-team"
+    ]
+  },
+  "notificationSettings": {
+    "repeatInterval": "1_hour",
+    "maxRepeats": 3,
+    "quietHours": {
+      "enabled": true,
+      "start": "22:00",
+      "end": "08:00"
+    }
+  }
+}

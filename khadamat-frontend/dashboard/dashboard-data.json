@@ -1,0 +1,233 @@
+{
+  "timestamp": "2025-12-09T16:46:36.451Z",
+  "performance": {
+    "timestamp": "2025-12-09T16:46:36.253Z",
+    "currentMetrics": {
+      "timestamp": "2025-12-09T16:46:36.246Z",
+      "ci": {
+        "startTime": 1765298796246,
+        "duration": 0,
+        "cacheHitRate": 0.85,
+        "timeSavings": 51
+      },
+      "performanceTests": {
+        "homepageLoadTime": 1547,
+        "servicesPageLoadTime": 3245,
+        "loginPageLoadTime": 1553,
+        "signupPageLoadTime": 2146,
+        "serviceDetailLoadTime": 2819,
+        "apiAuthResponseTime": 759,
+        "apiServicesResponseTime": 998
+      },
+      "budgets": {
+        "lighthouse": {
+          "performance": 0.9,
+          "accessibility": 0.9,
+          "best-practices": 0.9,
+          "seo": 0.9,
+          "pwa": 0.8
+        },
+        "webVitals": {
+          "fcp": 1800,
+          "lcp": 2500,
+          "cls": 0.1,
+          "tti": 3800,
+          "speedIndex": 4300
+        },
+        "apiResponse": {
+          "max": 1000,
+          "p95": 500,
+          "auth": 800,
+          "search": 700,
+          "dashboard": 600
+        },
+        "bundleSize": {
+          "main": 500000,
+          "vendor": 1000000,
+          "total": 2000000
+        },
+        "componentRender": {
+          "max": 50,
+          "warning": 20
+        },
+        "memoryUsage": {
+          "maxHeapSize": 200000000,
+          "warningHeapSize": 150000000
+        }
+      },
+      "system": {
+        "nodeVersion": "v22.17.1",
+        "platform": "win32",
+        "arch": "x64",
+        "memoryUsage": {
+          "rss": 39088128,
+          "heapTotal": 6881280,
+          "heapUsed": 5140088,
+          "external": 1676391,
+          "arrayBuffers": 10515
+        }
+      }
+    },
+    "trends": {
+      "timestamp": "2025-12-09T16:46:36.251Z",
+      "analysisPeriod": "13 runs",
+      "homepageLoadTime": {
+        "firstValue": 1781,
+        "lastValue": 1547,
+        "improvement": 13.14,
+        "trend": "improved"
+      },
+      "servicesPageLoadTime": {
+        "firstValue": 2771,
+        "lastValue": 3245,
+        "improvement": -17.11,
+        "trend": "regressed"
+      },
+      "loginPageLoadTime": {
+        "firstValue": 1890,
+        "lastValue": 1553,
+        "improvement": 17.83,
+        "trend": "improved"
+      },
+      "signupPageLoadTime": {
+        "firstValue": 2441,
+        "lastValue": 2146,
+        "improvement": 12.09,
+        "trend": "improved"
+      },
+      "serviceDetailLoadTime": {
+        "firstValue": 3489,
+        "lastValue": 2819,
+        "improvement": 19.2,
+        "trend": "improved"
+      },
+      "apiAuthResponseTime": {
+        "firstValue": 488,
+        "lastValue": 759,
+        "improvement": -55.53,
+        "trend": "regressed"
+      },
+      "apiServicesResponseTime": {
+        "firstValue": 976,
+        "lastValue": 998,
+        "improvement": -2.25,
+        "trend": "regressed"
+      },
+      "cacheEffectiveness": {
+        "averageCacheHitRate": 0.87,
+        "estimatedAnnualSavings": 191,
+        "trend": "optimal"
+      }
+    },
+    "compliance": {
+      "homepage": true,
+      "servicesPage": true,
+      "loginPage": true,
+      "signupPage": true,
+      "serviceDetail": true,
+      "apiAuth": true,
+      "apiServices": false,
+      "overallScore": "0.86"
+    },
+    "recommendations": [
+      {
+        "type": "regression",
+        "priority": "medium",
+        "message": "servicesPageLoadTime performance has regressed from 2771ms to 3245ms",
+        "impact": "Investigate recent changes that may have impacted performance"
+      },
+      {
+        "type": "regression",
+        "priority": "medium",
+        "message": "apiAuthResponseTime performance has regressed from 488ms to 759ms",
+        "impact": "Investigate recent changes that may have impacted performance"
+      },
+      {
+        "type": "regression",
+        "priority": "medium",
+        "message": "apiServicesResponseTime performance has regressed from 976ms to 998ms",
+        "impact": "Investigate recent changes that may have impacted performance"
+      }
+    ]
+  },
+  "cache": {
+    "timestamp": "2025-12-09T16:46:36.256Z",
+    "validationStatus": "VALIDATED_GOOD",
+    "cacheMetrics": {
+      "npmCacheHitRate": "90.4%",
+      "playwrightCacheHitRate": "81.1%",
+      "overallCacheHitRate": "86.1%",
+      "timeSavedSeconds": 115,
+      "estimatedAnnualSavings": "$3504.00",
+      "efficiencyScore": "86.1"
+    },
+    "performanceImpact": {
+      "ciDurationImpact": "38.3%",
+      "costSavingsImpact": "$3504.00/year",
+      "overallEffectiveness": {
+        "score": 80,
+        "rating": "VERY_GOOD"
+      }
+    },
+    "recommendations": [],
+    "validationSummary": {
+      "overallStatus": "VALIDATED_GOOD",
+      "cacheEffectiveness": "86.1%",
+      "timeSavings": "115 seconds per run",
+      "costSavings": "$3504.00",
+      "ciDurationImpact": "38.3%",
+      "recommendationCount": 0,
+      "recommendationPriority": "NONE",
+      "message": "✅ Cache system is performing well with good cost and time savings."
+    }
+  },
+  "flakyDetection": {
+    "status": "N/A",
+    "accuracy": "N/A",
+    "recommendations": []
+  },
+  "system": {
+    "timestamp": "2025-12-09T16:46:36.451Z",
+    "cpuUsage": {
+      "user": 46000,
+      "system": 62000
+    },
+    "memoryUsage": {
+      "rss": 40411136,
+      "heapTotal": 7667712,
+      "heapUsed": 5090544,
+      "external": 1676510,
+      "arrayBuffers": 10594
+    },
+    "uptime": 0.3594586,
+    "nodeVersion": "v22.17.1",
+    "platform": "win32",
+    "arch": "x64"
+  },
+  "alerts": [
+    {
+      "severity": {
+        "color": "#ff9800",
+        "icon": "🟠",
+        "priority": 2
+      },
+      "title": "apiAuthResponseTime Performance Regression",
+      "message": "apiAuthResponseTime performance has regressed by 55.53% (from 488ms to 759ms).",
+      "category": "performance",
+      "timestamp": "2025-12-09T16:46:36.451Z",
+      "acknowledged": false
+    },
+    {
+      "severity": {
+        "color": "#ffc107",
+        "icon": "🟡",
+        "priority": 3
+      },
+      "title": "servicesPageLoadTime Performance Regression",
+      "message": "servicesPageLoadTime performance has regressed by 17.11% (from 2771ms to 3245ms).",
+      "category": "performance",
+      "timestamp": "2025-12-09T16:46:36.451Z",
+      "acknowledged": false
+    }
+  ]
+}

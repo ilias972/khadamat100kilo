@@ -1,0 +1,82 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e5]:
+    - link "Retour à l'accueil" [ref=e6] [cursor=pointer]:
+      - /url: /
+      - img [ref=e7]
+      - text: Retour à l'accueil
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - generic [ref=e13]: K
+        - heading "Rejoignez Khadamat" [level=1] [ref=e14]
+        - paragraph [ref=e15]: Créez votre compte en quelques étapes
+      - generic [ref=e17]:
+        - generic [ref=e18]: "1"
+        - generic [ref=e20]: "2"
+      - generic [ref=e22]:
+        - heading "Informations de connexion" [level=3] [ref=e23]
+        - generic [ref=e24]:
+          - generic [ref=e25]: Je suis...
+          - generic [ref=e26]:
+            - button "Client Je cherche des services" [ref=e27] [cursor=pointer]:
+              - img [ref=e28]
+              - generic [ref=e33]: Client
+              - generic [ref=e34]: Je cherche des services
+            - button "Professionnel Je propose des services" [ref=e35] [cursor=pointer]:
+              - img [ref=e36]
+              - generic [ref=e39]: Professionnel
+              - generic [ref=e40]: Je propose des services
+        - generic [ref=e41]:
+          - generic [ref=e42]: Email
+          - generic [ref=e43]:
+            - generic:
+              - img
+            - textbox "votre@email.com" [ref=e44]
+        - generic [ref=e45]:
+          - generic [ref=e46]: Numéro de téléphone
+          - generic [ref=e47]:
+            - generic:
+              - img
+            - textbox "+212XXXXXXXXX" [ref=e48]
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - generic [ref=e51]: Mot de passe
+            - generic [ref=e52]:
+              - generic:
+                - img
+              - textbox "Au moins 8 caractères" [ref=e53]
+          - button "Afficher le mot de passe" [ref=e54] [cursor=pointer]:
+            - img [ref=e55]
+        - generic [ref=e58]:
+          - generic [ref=e59]:
+            - generic [ref=e60]: Confirmer le mot de passe
+            - generic [ref=e61]:
+              - generic:
+                - img
+              - textbox "Répétez votre mot de passe" [ref=e62]
+          - button "Afficher la confirmation" [ref=e63] [cursor=pointer]:
+            - img [ref=e64]
+        - button "Continuer" [ref=e67] [cursor=pointer]:
+          - generic [ref=e68]: Continuer
+      - paragraph [ref=e70]:
+        - text: Déjà un compte ?
+        - link "Se connecter" [ref=e71] [cursor=pointer]:
+          - /url: /auth/login
+    - paragraph [ref=e73]:
+      - text: En vous inscrivant, vous acceptez nos
+      - link "Conditions d'utilisation" [ref=e74] [cursor=pointer]:
+        - /url: /terms
+      - text: et notre
+      - link "Politique de confidentialité" [ref=e75] [cursor=pointer]:
+        - /url: /privacy
+  - region "Notifications alt+T"
+  - generic [ref=e76]:
+    - img [ref=e78]
+    - button "Open Tanstack query devtools" [ref=e126] [cursor=pointer]:
+      - img [ref=e127]
+  - button "Open Next.js Dev Tools" [ref=e180] [cursor=pointer]:
+    - img [ref=e181]
+  - alert [ref=e184]
+```

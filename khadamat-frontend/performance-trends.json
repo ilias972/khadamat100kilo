@@ -1,0 +1,51 @@
+{
+  "timestamp": "2025-12-09T16:46:36.251Z",
+  "analysisPeriod": "13 runs",
+  "homepageLoadTime": {
+    "firstValue": 1781,
+    "lastValue": 1547,
+    "improvement": 13.14,
+    "trend": "improved"
+  },
+  "servicesPageLoadTime": {
+    "firstValue": 2771,
+    "lastValue": 3245,
+    "improvement": -17.11,
+    "trend": "regressed"
+  },
+  "loginPageLoadTime": {
+    "firstValue": 1890,
+    "lastValue": 1553,
+    "improvement": 17.83,
+    "trend": "improved"
+  },
+  "signupPageLoadTime": {
+    "firstValue": 2441,
+    "lastValue": 2146,
+    "improvement": 12.09,
+    "trend": "improved"
+  },
+  "serviceDetailLoadTime": {
+    "firstValue": 3489,
+    "lastValue": 2819,
+    "improvement": 19.2,
+    "trend": "improved"
+  },
+  "apiAuthResponseTime": {
+    "firstValue": 488,
+    "lastValue": 759,
+    "improvement": -55.53,
+    "trend": "regressed"
+  },
+  "apiServicesResponseTime": {
+    "firstValue": 976,
+    "lastValue": 998,
+    "improvement": -2.25,
+    "trend": "regressed"
+  },
+  "cacheEffectiveness": {
+    "averageCacheHitRate": 0.87,
+    "estimatedAnnualSavings": 191,
+    "trend": "optimal"
+  }
+}

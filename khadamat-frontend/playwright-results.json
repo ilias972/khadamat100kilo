@@ -1,0 +1,96 @@
+{
+  "suites": [
+    {
+      "title": "Flaky Test Validation Suite",
+      "specs": [
+        {
+          "id": "test-1",
+          "title": "Timing dependent test 1",
+          "retries": 2,
+          "results": [
+            {
+              "status": "failed",
+              "duration": 150
+            },
+            {
+              "status": "passed",
+              "duration": 250
+            },
+            {
+              "status": "passed",
+              "duration": 180
+            }
+          ]
+        },
+        {
+          "id": "test-2",
+          "title": "Race condition test 2",
+          "retries": 1,
+          "results": [
+            {
+              "status": "failed",
+              "duration": 120
+            },
+            {
+              "status": "passed",
+              "duration": 130
+            }
+          ]
+        },
+        {
+          "id": "test-3",
+          "title": "Random failure test 3",
+          "retries": 3,
+          "results": [
+            {
+              "status": "failed",
+              "duration": 80
+            },
+            {
+              "status": "failed",
+              "duration": 90
+            },
+            {
+              "status": "passed",
+              "duration": 100
+            },
+            {
+              "status": "passed",
+              "duration": 110
+            }
+          ]
+        },
+        {
+          "id": "test-4",
+          "title": "Network dependency test 4",
+          "retries": 0,
+          "results": [
+            {
+              "status": "passed",
+              "duration": 200
+            }
+          ]
+        },
+        {
+          "id": "test-5",
+          "title": "Resource leak test 5",
+          "retries": 2,
+          "results": [
+            {
+              "status": "failed",
+              "duration": 300
+            },
+            {
+              "status": "passed",
+              "duration": 280
+            },
+            {
+              "status": "passed",
+              "duration": 290
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

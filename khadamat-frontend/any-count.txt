@@ -1,0 +1,121 @@
+src\app\about\page.tsx:9:import { mockCompanyStats, mockTeamMembers, mockCompanyValues, type CompanyStats, type TeamMember, type CompanyValue } from '@/lib/mocks/services-mocks';
+src\app\about\page.tsx:12:  const [stats, setStats] = useState<CompanyStats | null>(null);
+src\app\about\page.tsx:14:  const [values, setValues] = useState<CompanyValue[]>([]);
+src\app\about\page.tsx:22:      setStats(mockCompanyStats);
+src\app\about\page.tsx:24:      setValues(mockCompanyValues);
+src\app\auth\login\page.tsx:50:    } catch (error: any) {
+src\app\auth\signup\page.tsx:167:    } catch (error: any) {
+src\app\auth\signup\page.tsx:461:                {errors.general || (registerMutation.error as any)?.message || 'Une erreur est survenue'}
+src\app\dashboard\client\layout.tsx:26:  // Don't render anything while checking auth
+src\app\dashboard\client\page.tsx:16:    const [bookings, setBookings] = useState<any[]>([]);
+src\app\dashboard\pro\bookings\page.tsx:245:                      <Badge variant={statusVariants[booking.status] as any}>
+src\app\dashboard\pro\page.tsx:28:  const [pendingBookings, setPendingBookings] = useState<any[]>([]);
+src\app\dashboard\pro\page.tsx:29:  const [stats, setStats] = useState<any>(null);
+src\app\dashboard\pro\page.tsx:30:  const [monthlyEarnings, setMonthlyEarnings] = useState<any[]>([]);
+src\app\dashboard\pro\page.tsx:48:        const pending = bookingsRes.filter((b: any) => b.status === 'PENDING');
+src\app\dashboard\pro\settings\page.tsx:149:              onClick={() => setActiveTab(tab.id as any)}
+src\app\debug\page.tsx:8:  const [data, setData] = useState<any[]>([]);
+src\app\debug\page.tsx:9:  const [error, setError] = useState<any>(null);
+src\app\layout.tsx:114:        <link rel="icon" href="/favicon.ico" sizes="any" />
+src\components\booking\booking-modal.tsx:67:    } catch (error: any) {
+src\components\charts\BenchmarkComparison.d.ts:11:    icon: React.ComponentType<any>;
+src\components\charts\BenchmarkComparison.tsx:33:  icon: React.ComponentType<any>;
+src\components\charts\BenchmarkComparison.tsx:407:            onChange={(e) => setSortBy(e.target.value as any)}
+src\components\charts\BookingsChart.tsx:77:  const tooltipFormatter = (value: any, name: string): [string, string] => {
+src\components\charts\BookingsChart.tsx:291:            formatter={(value: any) => [`${value} réservations`, 'Terminées']}
+src\components\charts\ChartContainer.d.ts:25:    payload?: any[];
+src\components\charts\ChartContainer.d.ts:27:    formatter?: (value: any, name: string) => [string, string];
+src\components\charts\ChartContainer.tsx:148:  payload?: any[];
+src\components\charts\ChartContainer.tsx:150:  formatter?: (value: any, name: string) => [string, string];
+src\components\charts\RevenueChart.tsx:64:  const tooltipFormatter = (value: any, name: string): [string, string] => {
+src\components\charts\RevenueChart.tsx:296:            formatter={(value: any) => [`${value.toLocaleString('fr-FR')} DH`, 'Revenus']}
+src\components\charts\TrendsWidget.d.ts:14:    timeSeriesData?: any[];
+src\components\charts\TrendsWidget.d.ts:15:    benchmarkData?: any[];
+src\components\charts\TrendsWidget.tsx:37:  timeSeriesData?: any[];
+src\components\charts\TrendsWidget.tsx:38:  benchmarkData?: any[];
+src\components\client\personalized-recommendations.d.ts:4:    bookingHistory?: any[];
+src\components\client\personalized-recommendations.tsx:30:  bookingHistory?: any[];
+src\components\error-boundary.d.ts:18:    render(): string | number | bigint | boolean | Iterable<React.ReactNode> | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | React.JSX.Element | null | undefined;
+src\components\examples\complete-dashboard-examples.tsx:173:  const handleImplementInsight = (insight: any) => {
+src\components\examples\complete-dashboard-examples.tsx:177:  const handleGenerateReport = async (config: any) => {
+src\components\examples\complete-dashboard-examples.tsx:181:  const handleScheduleReport = async (config: any) => {
+src\components\layout\footer.tsx:31:    company: [
+src\components\layout\footer.tsx:133:          {/* Company */}
+src\components\layout\footer.tsx:137:              {footerLinks.company.map((link) => (
+src\components\motion\scroll-smoother.tsx:66:      (window as any).lenis = lenisRef.current;
+src\components\premium\analytics-dashboard.d.ts:10:    icon?: React.ComponentType<any>;
+src\components\premium\analytics-dashboard.d.ts:18:    data: any[];
+src\components\premium\analytics-dashboard.tsx:43:  icon?: React.ComponentType<any>;
+src\components\premium\analytics-dashboard.tsx:52:  data: any[];
+src\components\premium\analytics-dashboard.tsx:161:                setSelectedPeriod(e.target.value as any);
+src\components\premium\smart-search.d.ts:13:    metadata?: Record<string, any>;
+src\components\premium\smart-search.tsx:33:  metadata?: Record<string, any>;
+src\components\pro\advanced-reporting.tsx:219:                      onClick={() => setReportConfig({ ...reportConfig, format: format.value as any })}
+src\components\pro\advanced-reporting.tsx:310:              onChange={(e) => setReportConfig({ ...reportConfig, schedule: e.target.value as any })}
+src\components\professionals\professionals-filters.tsx:28:  const [categories, setCategories] = useState<any[]>([]);
+src\components\professionals\professionals-filters.tsx:41:  const mockCategories: any[] = [
+src\components\professionals\professionals-filters.tsx:60:        setCategories(categoriesData.filter((cat: any) => cat.isActive));
+src\components\professionals\professionals-filters.tsx:139:            {categories.map((category: any) => (
+src\components\professionals\professionals-grid.tsx:25:  const [professionals, setProfessionals] = useState<any[]>([]);
+src\components\professionals\professionals-grid.tsx:32:  const mockProfessionals: any[] = [
+src\components\professionals\professionals-grid.tsx:83:        const response: any = await api.getPros({
+src\components\professionals\professionals-grid.tsx:207:        {professionals.map((pro: any) => (
+src\components\pros\pros-filters.tsx:20:  cities: any[];
+src\components\pros\pros-filters.tsx:21:  categories: any[];
+src\components\pros\pros-filters.tsx:74:            {cities.filter((city: any) => city.isActive).map((city: any) => (
+src\components\pros\pros-filters.tsx:94:          {categories.filter((cat: any) => cat.isActive).map((category: any) => (
+src\components\pros\pros-hero-filters.tsx:19:  cities: any[];
+src\components\pros\pros-hero-filters.tsx:20:  categories: any[];
+src\components\pros\pros-hero-filters.tsx:69:                  {cities.filter((city: any) => city.isActive).map((city: any) => (
+src\components\pros\pros-hero-filters.tsx:88:                  {categories.filter((cat: any) => cat.isActive).map((category: any) => (
+src\components\sections\cities-section.tsx:18:  const [cities, setCities] = React.useState<any[]>([]);
+src\components\sections\cities-section.tsx:25:        setCities(citiesData.filter((city: any) => city.isActive));
+src\components\sections\cities-section.tsx:103:          {cities.map((city: any, index) => (
+src\components\sections\hero.tsx:52:            <div className="text-3xl font-bold">{(stats[0] as any)?.totalProfessionals || 0}+</div>
+src\components\sections\hero.tsx:56:            <div className="text-3xl font-bold">{(stats[0] as any)?.totalServices || 0}+</div>
+src\components\sections\hero.tsx:60:            <div className="text-3xl font-bold">{(stats[0] as any)?.totalCities || 0}+</div>
+src\components\sections\popular-services.tsx:51:        {services.map((service: any) => (
+src\components\sections\services-by-city.tsx:18:        {services.map((service: any) => (
+src\components\services\service-filters.tsx:26:  const [cities, setCities] = useState<any[]>([]);
+src\components\services\service-filters.tsx:27:  const [categories, setCategories] = useState<any[]>([]);
+src\components\services\service-filters.tsx:39:        setCities(citiesData.filter((city: any) => city.isActive));
+src\components\services\service-filters.tsx:40:        setCategories(categoriesData.filter((cat: any) => cat.isActive));
+src\components\services\service-grid.tsx:51:  categories: any[];
+src\components\services\service-grid.tsx:56:  const [fetchedCategories, setFetchedCategories] = useState<any[]>([]);
+src\components\services\service-grid.tsx:57:  const [filteredCategories, setFilteredCategories] = useState<any[]>([]);
+src\components\services\service-grid.tsx:68:        const activeCategories = data.filter((cat: any) => cat.isActive);
+src\components\services\service-grid.tsx:99:      filtered = fetchedCategories.filter((cat: any) => cat.id === filters.serviceId);
+src\components\services\service-grid.tsx:105:      filtered = filtered.filter((cat: any) =>
+src\components\ui\error-boundary-enhanced.d.ts:22:    render(): string | number | bigint | boolean | Iterable<React.ReactNode> | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | React.JSX.Element | null | undefined;
+src\components\ui\lazy-loading.tsx:181:    margin: rootMargin as any,
+src\components\ui\optimized-image.tsx:22:  [key: string]: any;
+src\components\ui\quick-actions.d.ts:4:    user?: any;
+src\components\ui\quick-actions.tsx:33:  user?: any;
+src\components\ui\service-card.tsx:37:  category: any;
+src\components\ui\service-card.tsx:252:  categories: any[];
+src\components\ui\tooltip-advanced.tsx:256:          } as any);
+src\hooks\usePerformanceMonitoring.d.ts:20:    debounce: <T extends (...args: any[]) => any>(func: T, wait: number) => ((...args: Parameters<T>) => void);
+src\hooks\usePerformanceMonitoring.d.ts:21:    throttle: <T extends (...args: any[]) => any>(func: T, limit: number) => ((...args: Parameters<T>) => void);
+src\hooks\usePerformanceMonitoring.d.ts:29:        chunks: any[];
+src\hooks\useProAnalytics.d.ts:3:    analytics: any;
+src\hooks\useProAnalytics.d.ts:7:    getRevenueData: () => any;
+src\hooks\useProAnalytics.d.ts:8:    getBookingsData: () => any;
+src\hooks\useProAnalytics.d.ts:9:    getPerformanceMetrics: () => any;
+src\hooks\useProAnalytics.d.ts:10:    getTrends: () => any;
+src\hooks\useProAnalytics.d.ts:11:    getInsights: () => any;
+src\hooks\useProAnalytics.d.ts:12:    getBenchmarks: () => any;
+src\hooks\useProAnalytics.d.ts:13:    getSummary: () => any;
+src\lib\api\transformers.ts:17:  proServices?: any[];
+src\lib\api\transformers.ts:169:export function transformProService(service: any): any {
+src\lib\auth-context.d.ts:8:    signup: (userData: any) => Promise<User>;
+src\lib\auth-context.tsx:12:  signup: (userData: any) => Promise<User>;
+src\lib\auth-context.tsx:66:        // No stored user or token, clear any invalid state
+src\lib\auth-context.tsx:87:  const signup = async (userData: any): Promise<User> => {
+src\lib\auth.d.ts:15:    signup(userData: any): Promise<User>;
+src\lib\auth.d.ts:20:export declare const getCurrentUser: () => any;
+src\lib\mocks\services-mocks.d.ts:334:export interface CompanyStats {
+src\lib\mocks\services-mocks.d.ts:347:export interface CompanyValue {
+src\lib\mocks\services-mocks.d.ts:353:export declare const mockCompanyStats: CompanyStats;
+src\lib\mocks\services-mocks.d.ts:355:export declare const mockCompanyValues: CompanyValue[];
+src\lib\utils.d.ts:8:export declare function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void;
+src\types\analytics.d.ts:79:    data: any[];

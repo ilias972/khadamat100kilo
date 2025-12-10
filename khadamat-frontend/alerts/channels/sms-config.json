@@ -1,0 +1,24 @@
+{
+  "name": "sms",
+  "type": "sms",
+  "enabled": true,
+  "configuration": {
+    "provider": "twilio",
+    "accountSid": "YOUR_ACCOUNT_SID",
+    "authToken": "YOUR_AUTH_TOKEN",
+    "fromNumber": "+1234567890",
+    "toNumbers": [
+      "+1234567890",
+      "+1987654321"
+    ]
+  },
+  "notificationSettings": {
+    "repeatInterval": "1_hour",
+    "maxRepeats": 3,
+    "quietHours": {
+      "enabled": true,
+      "start": "22:00",
+      "end": "08:00"
+    }
+  }
+}

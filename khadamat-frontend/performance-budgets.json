@@ -1,0 +1,36 @@
+{
+  "lighthouse": {
+    "performance": 0.9,
+    "accessibility": 0.9,
+    "best-practices": 0.9,
+    "seo": 0.9,
+    "pwa": 0.8
+  },
+  "webVitals": {
+    "fcp": 1800,
+    "lcp": 2500,
+    "cls": 0.1,
+    "tti": 3800,
+    "speedIndex": 4300
+  },
+  "apiResponse": {
+    "max": 1000,
+    "p95": 500,
+    "auth": 800,
+    "search": 700,
+    "dashboard": 600
+  },
+  "bundleSize": {
+    "main": 500000,
+    "vendor": 1000000,
+    "total": 2000000
+  },
+  "componentRender": {
+    "max": 50,
+    "warning": 20
+  },
+  "memoryUsage": {
+    "maxHeapSize": 200000000,
+    "warningHeapSize": 150000000
+  }
+}

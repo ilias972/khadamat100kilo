@@ -1,0 +1,124 @@
+// Design Tokens - Colors
+// This file defines the color palette and semantic color tokens for the Khadamat design system
+
+export const colors = {
+  // Base colors
+  white: '#ffffff',
+  black: '#000000',
+
+  // Surface colors
+  surface: {
+    DEFAULT: '#ffffff',
+    secondary: '#f8fafc',
+    tertiary: '#f1f5f9',
+  },
+
+  // Background colors
+  background: {
+    DEFAULT: '#FAF7F2',
+    secondary: '#f8fafc',
+    tertiary: '#f1f5f9',
+  },
+
+  // Text colors
+  text: {
+    primary: '#3B3B3B',
+    secondary: '#64748b',
+    muted: '#94a3b8',
+    inverse: '#ffffff',
+  },
+
+  // Border colors
+  border: {
+    light: '#e2e8f0',
+    medium: '#cbd5e1',
+    dark: '#94a3b8',
+  },
+
+  // Primary colors (Orange)
+  primary: {
+    50: '#fff7ed',
+    100: '#ffedd5',
+    200: '#fed7aa',
+    300: '#fdba74',
+    400: '#fb923c',
+    500: '#f97316',
+    600: '#F97B22',
+    700: '#c2410c',
+    800: '#9a3412',
+    900: '#7c2d12',
+  },
+
+  // Secondary colors (Coral)
+  secondary: {
+    50: '#fff7ed',
+    100: '#ffe4cc',
+    200: '#ffd199',
+    300: '#ffb866',
+    400: '#FFA559',
+    500: '#ff8c33',
+    600: '#e67e22',
+    700: '#cc6f1a',
+    800: '#b35c14',
+    900: '#99490f',
+  },
+
+  // Accent colors
+  accent: {
+    50: '#fef3c7',
+    100: '#fde68a',
+    200: '#fcd34d',
+    300: '#fbbf24',
+    400: '#f59e0b',
+    500: '#d97706',
+    600: '#b45309',
+    700: '#92400e',
+    800: '#78350f',
+    900: '#451a03',
+  },
+
+  // Success colors
+  success: {
+    50: '#f0fdf4',
+    100: '#dcfce7',
+    200: '#bbf7d0',
+    300: '#86efac',
+    400: '#4ade80',
+    500: '#22c55e',
+    600: '#16a34a',
+    700: '#15803d',
+    800: '#166534',
+    900: '#14532d',
+  },
+
+  // Warning colors
+  warning: {
+    50: '#fffbeb',
+    100: '#fef3c7',
+    200: '#fde68a',
+    300: '#fcd34d',
+    400: '#fbbf24',
+    500: '#f59e0b',
+    600: '#d97706',
+    700: '#b45309',
+    800: '#92400e',
+    900: '#78350f',
+  },
+
+  // Error colors (already defined in tailwind.config.js)
+  // Using the same palette for consistency
+
+  // Info colors
+  info: {
+    50: '#eff6ff',
+    100: '#dbeafe',
+    200: '#bfdbfe',
+    300: '#93c5fd',
+    400: '#60a5fa',
+    500: '#3b82f6',
+    600: '#2563eb',
+    700: '#1d4ed8',
+    800: '#1e40af',
+    900: '#1e3a8a',
+  },
+};

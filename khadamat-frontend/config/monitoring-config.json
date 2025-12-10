@@ -1,0 +1,160 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2025-12-08T22:43:55.022Z",
+  "monitoring": {
+    "performanceThresholds": {
+      "performance": {
+        "homepageLoadTime": {
+          "critical": 3000,
+          "high": 2500,
+          "medium": 2000
+        },
+        "servicesPageLoadTime": {
+          "critical": 3500,
+          "high": 3000,
+          "medium": 2500
+        },
+        "loginPageLoadTime": {
+          "critical": 2000,
+          "high": 1500,
+          "medium": 1200
+        },
+        "apiAuthResponseTime": {
+          "critical": 800,
+          "high": 600,
+          "medium": 500
+        },
+        "apiServicesResponseTime": {
+          "critical": 1000,
+          "high": 800,
+          "medium": 700
+        }
+      },
+      "webVitals": {
+        "lcp": {
+          "critical": 4000,
+          "high": 3500,
+          "medium": 2500
+        },
+        "fid": {
+          "critical": 300,
+          "high": 200,
+          "medium": 100
+        },
+        "cls": {
+          "critical": 0.25,
+          "high": 0.2,
+          "medium": 0.1
+        }
+      },
+      "cache": {
+        "hitRate": {
+          "critical": 0.7,
+          "high": 0.8,
+          "medium": 0.85
+        }
+      }
+    },
+    "regressionDetection": {
+      "enabled": true,
+      "sensitivity": "high",
+      "baselinePeriod": "7_days",
+      "alertThreshold": 10
+    },
+    "dataCollection": {
+      "interval": "5_minutes",
+      "retentionPeriod": "30_days"
+    }
+  },
+  "alerting": {
+    "channels": [
+      {
+        "name": "slack",
+        "enabled": true,
+        "configuration": {
+          "webhookUrl": "https://hooks.slack.com/services/YOUR_WEBHOOK_URL",
+          "channel": "#performance-alerts",
+          "messageFormat": "full",
+          "mentions": [
+            "@performance-team"
+          ]
+        }
+      },
+      {
+        "name": "email",
+        "enabled": true,
+        "configuration": {
+          "smtpServer": "smtp.example.com",
+          "port": 587,
+          "from": "monitoring@example.com",
+          "to": [
+            "performance-team@example.com",
+            "devops@example.com"
+          ],
+          "subjectPrefix": "[PERFORMANCE ALERT]"
+        }
+      },
+      {
+        "name": "sms",
+        "enabled": true,
+        "configuration": {
+          "provider": "twilio",
+          "accountSid": "YOUR_ACCOUNT_SID",
+          "authToken": "YOUR_AUTH_TOKEN",
+          "fromNumber": "+1234567890",
+          "toNumbers": [
+            "+1234567890",
+            "+1987654321"
+          ]
+        }
+      }
+    ],
+    "escalationPolicy": {
+      "critical": [
+        "slack",
+        "email",
+        "sms"
+      ],
+      "high": [
+        "slack",
+        "email"
+      ],
+      "medium": [
+        "slack"
+      ],
+      "low": [
+        "email"
+      ]
+    },
+    "notificationSettings": {
+      "repeatInterval": "1_hour",
+      "maxRepeats": 3,
+      "quietHours": {
+        "enabled": true,
+        "start": "22:00",
+        "end": "08:00"
+      }
+    }
+  },
+  "logging": {
+    "logFile": "/var/log/performance.log",
+    "logLevel": "info",
+    "logRotation": {
+      "enabled": true,
+      "maxSize": "10MB",
+      "maxFiles": 5
+    }
+  },
+  "cronJobs": {
+    "performanceDashboard": {
+      "schedule": "0 6 * * *",
+      "command": "node scripts/generate-performance-dashboard.js",
+      "enabled": true
+    },
+    "alertCheck": {
+      "schedule": "*/5 * * * *",
+      "command": "node scripts/check-alerts.js",
+      "enabled": true
+    }
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "ci": {
+    "testConfiguration": {
+      "backend": {
+        "testCommand": "npm run test",
+        "coverageThreshold": 80,
+        "timeout": 300000,
+        "retries": 2
+      },
+      "frontend": {
+        "testCommand": "npx playwright test",
+        "timeout": 180000,
+        "retries": 2,
+        "workers": 1
+      },
+      "e2e": {
+        "testCommand": "npm run test:e2e",
+        "timeout": 600000,
+        "retries": 1,
+        "workers": 1
+      }
+    },
+    "environment": {
+      "nodeVersion": "20",
+      "postgresVersion": "15",
+      "redisVersion": "7",
+      "cacheStrategy": "npm"
+    },
+    "artifacts": {
+      "backend": [
+        "test-results/",
+        "coverage/",
+        "logs/"
+      ],
+      "frontend": [
+        "playwright-report/",
+        "test-results/"
+      ],
+      "e2e": [
+        "test-results/",
+        "coverage/",
+        "screenshots/"
+      ]
+    },
+    "healthCheck": {
+      "backend": {
+        "endpoint": "/health",
+        "expectedResponse": "ok",
+        "timeout": 30000,
+        "retries": 10,
+        "interval": 2000
+      },
+      "frontend": {
+        "endpoint": "/",
+        "expectedResponse": "Khadamat",
+        "timeout": 30000,
+        "retries": 10,
+        "interval": 2000
+      }
+    },
+    "performance": {
+      "memoryLimit": "4GB",
+      "cpuLimit": "2",
+      "timeout": "30m"
+    },
+    "notifications": {
+      "slackWebhook": "",
+      "emailRecipients": [
+        "dev-team@khadamat.ma"
+      ],
+      "failureThreshold": 3
+    }
+  },
+  "cd": {
+    "deploymentStrategies": {
+      "staging": {
+        "approvers": 1,
+        "automatic": false
+      },
+      "production": {
+        "approvers": 2,
+        "automatic": false,
+        "requires": ["staging"]
+      }
+    },
+    "environments": {
+      "staging": {
+        "url": "https://staging.khadamat.ma",
+        "healthCheck": "/health"
+      },
+      "production": {
+        "url": "https://khadamat.ma",
+        "healthCheck": "/health"
+      }
+    }
+  }
+}

@@ -1,0 +1,346 @@
+// Prisma schema for Khadamat backend
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CLIENT
+  PRO
+  ADMIN
+  MODERATOR
+}
+
+enum BookingStatus {
+  QUOTED
+  ACCEPTED
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  DISPUTED
+  CANCELLED
+}
+
+model User {
+   id                    String   @id @default(cuid())
+   email                 String   @unique
+   phone                 String   @unique
+   passwordHash          String
+   role                  Role    @default(CLIENT) // Single role
+   status                String   @default("active") // 'active', 'inactive', 'banned', 'deleted'
+   isEmailVerified       Boolean  @default(false)
+   emailVerificationToken String? @unique
+   passwordResetToken    String? @unique
+   passwordResetExpires  DateTime?
+   lastLogin             DateTime?
+   deletedAt             DateTime?
+   createdAt             DateTime @default(now())
+   updatedAt             DateTime @default(now())
+
+  clientProfile         ClientProfile?
+  proProfile            ProProfile?
+
+  // Booking relations
+  bookingsAsClient      Booking[] @relation("BookingClient")
+  bookingsAsPro         Booking[] @relation("BookingPro")
+
+  // Conversation relations
+  initiatedConversations Conversation[] @relation("ConversationParticipant1")
+  receivedConversations  Conversation[] @relation("ConversationParticipant2")
+
+  // Message relations
+  sentMessages          Message[]
+
+  // Review relations
+  reviewsAsClient       Review[] @relation("ReviewClient")
+  reviewsAsPro          Review[] @relation("ReviewPro")
+
+  // Dispute relations
+  resolvedDisputes      Dispute[]
+
+  // Payment relations
+  payments              Payment[]
+
+  // Notification relations
+  notifications         Notification[]
+
+  @@index([email])
+  @@index([phone])
+  @@index([role])
+}
+
+model ClientProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  firstName   String
+  lastName    String
+  address     String?
+  cityId      String?
+  preferredLanguage String @default("fr") // 'fr', 'ar'
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city        City?    @relation(fields: [cityId], references: [id])
+
+  @@index([cityId])
+}
+
+model ProProfile {
+   id            String   @id @default(cuid())
+   userId        String   @unique
+   firstName     String
+   lastName      String
+   profession    String
+   bio           String?
+   cityId        String?
+   isVerifiedPro Boolean  @default(false)
+   isPremium     Boolean  @default(false)
+   averageRating Float?
+   totalReviews  Int      @default(0)
+
+   user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+   city          City?        @relation(fields: [cityId], references: [id])
+   proServices   ProService[]
+   subscriptions ProSubscription[]
+
+   @@index([cityId])
+   @@index([isVerifiedPro])
+}
+
+model ServiceCategory {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  icon        String?
+  isActive    Boolean  @default(true)
+
+  proServices ProService[]
+  bookings    Booking[]
+}
+
+model City {
+  id          String   @id @default(cuid())
+  name        String
+  region      String?
+  isActive    Boolean  @default(true)
+
+  clientProfiles ClientProfile[]
+  proProfiles    ProProfile[]
+  proServices    ProService[]
+  bookings       Booking[]
+}
+
+model ProService {
+  id                String   @id @default(cuid())
+  proProfileId      String
+  serviceCategoryId String
+  cityId            String
+  basePrice         Float
+  minPrice          Float?
+  maxPrice          Float?
+  description       String?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now())
+
+  proProfile      ProProfile     @relation(fields: [proProfileId], references: [id], onDelete: Cascade)
+  serviceCategory ServiceCategory @relation(fields: [serviceCategoryId], references: [id])
+  city            City           @relation(fields: [cityId], references: [id])
+
+  @@index([proProfileId])
+  @@index([serviceCategoryId])
+  @@index([cityId])
+  @@index([isActive])
+}
+
+model Booking {
+  id                String   @id @default(cuid())
+  clientId          String
+  proId             String
+  serviceCategoryId String
+  cityId            String
+  description       String
+  photos            String   @default("[]") // JSON array
+  scheduledDate     DateTime?
+  timeSlot          String?
+  priceEstimate     Float?
+  finalPrice        Float?
+  status            BookingStatus @default(QUOTED)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now())
+
+  client          User            @relation("BookingClient", fields: [clientId], references: [id])
+  pro             User            @relation("BookingPro", fields: [proId], references: [id])
+  serviceCategory ServiceCategory @relation(fields: [serviceCategoryId], references: [id])
+  city            City            @relation(fields: [cityId], references: [id])
+  conversation    Conversation?
+  review          Review?
+  dispute         Dispute?
+
+  @@index([clientId])
+  @@index([proId])
+  @@index([serviceCategoryId])
+  @@index([cityId])
+  @@index([status])
+  @@index([scheduledDate])
+}
+
+model Conversation {
+  id             String   @id @default(cuid())
+  participant1Id String
+  participant2Id String
+  bookingId      String?  @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now())
+
+  participant1 User       @relation("ConversationParticipant1", fields: [participant1Id], references: [id])
+  participant2 User       @relation("ConversationParticipant2", fields: [participant2Id], references: [id])
+  booking      Booking?   @relation(fields: [bookingId], references: [id])
+  messages     Message[]
+
+  @@index([participant1Id])
+  @@index([participant2Id])
+  @@index([bookingId])
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  senderId       String
+  content        String
+  attachments    String   @default("[]") // JSON array
+  readAt         DateTime?
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User        @relation(fields: [senderId], references: [id])
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([createdAt])
+}
+
+model Review {
+  id                String   @id @default(cuid())
+  bookingId         String   @unique
+  clientId          String
+  proId             String
+  rating            Int      // 1-5
+  comment           String?
+  photosBeforeAfter String   @default("[]") // JSON array
+  isVerifiedClient  Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  client  User    @relation("ReviewClient", fields: [clientId], references: [id])
+  pro     User    @relation("ReviewPro", fields: [proId], references: [id])
+
+  @@index([bookingId])
+  @@index([clientId])
+  @@index([proId])
+  @@index([rating])
+}
+
+model Dispute {
+   id          String   @id @default(cuid())
+   bookingId   String   @unique
+   initiatedBy String   // 'client' or 'pro'
+   reason      String
+   description String?
+   status      String   @default("open") // 'open', 'resolved', 'closed'
+   resolution  String?
+   resolvedAt  DateTime?
+   resolvedBy  String?
+   createdAt   DateTime @default(now())
+   updatedAt   DateTime @default(now())
+
+   booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+   resolver  User?   @relation(fields: [resolvedBy], references: [id])
+
+   @@index([bookingId])
+   @@index([initiatedBy])
+   @@index([status])
+}
+
+model SubscriptionPlan {
+   id          String   @id @default(cuid())
+   name        String
+   description String?
+   price       Float
+   duration    Int      // in days
+   features    String   @default("[]") // JSON array
+   isActive    Boolean  @default(true)
+   createdAt   DateTime @default(now())
+   updatedAt   DateTime @default(now())
+
+   subscriptions ProSubscription[]
+
+   @@index([isActive])
+}
+
+model ProSubscription {
+   id                String   @id @default(cuid())
+   proProfileId      String
+   subscriptionPlanId String
+   startDate         DateTime
+   endDate           DateTime
+   status            String   @default("active") // 'active', 'expired', 'canceled'
+   autoRenew         Boolean  @default(true)
+   createdAt         DateTime @default(now())
+   updatedAt         DateTime @default(now())
+
+   proProfile      ProProfile     @relation(fields: [proProfileId], references: [id], onDelete: Cascade)
+   subscriptionPlan SubscriptionPlan @relation(fields: [subscriptionPlanId], references: [id])
+   payments        Payment[]
+
+   @@index([proProfileId])
+   @@index([subscriptionPlanId])
+   @@index([status])
+   @@index([endDate])
+}
+
+model Payment {
+   id              String   @id @default(cuid())
+   userId          String
+   subscriptionId  String?
+   amount          Float
+   currency        String   @default("EUR")
+   status          String   @default("pending") // 'pending', 'completed', 'failed', 'refunded'
+   paymentMethod   String   // 'stripe', 'paypal', etc.
+   transactionId   String?  @unique
+   description     String?
+   createdAt       DateTime @default(now())
+   updatedAt       DateTime @default(now())
+
+   user         User            @relation(fields: [userId], references: [id])
+   subscription ProSubscription? @relation(fields: [subscriptionId], references: [id])
+
+   @@index([userId])
+   @@index([subscriptionId])
+   @@index([status])
+   @@index([createdAt])
+}
+
+model Notification {
+   id        String    @id @default(cuid())
+   userId    String
+   type      String    // 'booking_request', 'booking_accepted', 'message', etc.
+   title     String
+   message   String
+   channel   String    @default("in-app") // 'in-app', 'email', 'sms'
+   isRead    Boolean   @default(false)
+   readAt    DateTime?
+   payload   String?   // JSON string for additional data
+   createdAt DateTime  @default(now())
+
+   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+   @@index([userId])
+   @@index([isRead])
+   @@index([createdAt])
+}

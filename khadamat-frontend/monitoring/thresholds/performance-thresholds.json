@@ -1,0 +1,53 @@
+{
+  "performance": {
+    "homepageLoadTime": {
+      "critical": 3000,
+      "high": 2500,
+      "medium": 2000
+    },
+    "servicesPageLoadTime": {
+      "critical": 3500,
+      "high": 3000,
+      "medium": 2500
+    },
+    "loginPageLoadTime": {
+      "critical": 2000,
+      "high": 1500,
+      "medium": 1200
+    },
+    "apiAuthResponseTime": {
+      "critical": 800,
+      "high": 600,
+      "medium": 500
+    },
+    "apiServicesResponseTime": {
+      "critical": 1000,
+      "high": 800,
+      "medium": 700
+    }
+  },
+  "webVitals": {
+    "lcp": {
+      "critical": 4000,
+      "high": 3500,
+      "medium": 2500
+    },
+    "fid": {
+      "critical": 300,
+      "high": 200,
+      "medium": 100
+    },
+    "cls": {
+      "critical": 0.25,
+      "high": 0.2,
+      "medium": 0.1
+    }
+  },
+  "cache": {
+    "hitRate": {
+      "critical": 0.7,
+      "high": 0.8,
+      "medium": 0.85
+    }
+  }
+}

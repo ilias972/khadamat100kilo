@@ -1,0 +1,57 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e5]:
+    - link "Retour à l'accueil" [ref=e6] [cursor=pointer]:
+      - /url: /
+      - img [ref=e7]
+      - text: Retour à l'accueil
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - generic [ref=e13]: K
+        - heading "Bienvenue sur Khadamat" [level=1] [ref=e14]
+        - paragraph [ref=e15]: Connectez-vous pour accéder à votre compte
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - generic [ref=e18]: Email
+          - generic [ref=e19]:
+            - generic:
+              - img
+            - textbox "votre@email.com" [ref=e20]
+        - generic [ref=e21]:
+          - generic [ref=e22]:
+            - generic [ref=e23]: Mot de passe
+            - generic [ref=e24]:
+              - generic:
+                - img
+              - textbox "Votre mot de passe" [ref=e25]
+          - button "Afficher le mot de passe" [ref=e26] [cursor=pointer]:
+            - img [ref=e27]
+        - link "Mot de passe oublié ?" [ref=e31] [cursor=pointer]:
+          - /url: /auth/forgot-password
+        - button "Se connecter" [ref=e32] [cursor=pointer]:
+          - generic [ref=e33]: Se connecter
+      - generic [ref=e39]: ou
+      - button "Continuer avec Google (Bientôt disponible)" [disabled] [ref=e41]:
+        - generic [ref=e42]: Continuer avec Google (Bientôt disponible)
+      - paragraph [ref=e44]:
+        - text: Pas encore de compte ?
+        - link "S'inscrire" [ref=e45] [cursor=pointer]:
+          - /url: /auth/signup
+    - paragraph [ref=e47]:
+      - text: En vous connectant, vous acceptez nos
+      - link "Conditions d'utilisation" [ref=e48] [cursor=pointer]:
+        - /url: /terms
+      - text: et notre
+      - link "Politique de confidentialité" [ref=e49] [cursor=pointer]:
+        - /url: /privacy
+  - region "Notifications alt+T"
+  - generic [ref=e50]:
+    - img [ref=e52]
+    - button "Open Tanstack query devtools" [ref=e100] [cursor=pointer]:
+      - img [ref=e101]
+  - button "Open Next.js Dev Tools" [ref=e154] [cursor=pointer]:
+    - img [ref=e155]
+  - alert [ref=e158]
+```

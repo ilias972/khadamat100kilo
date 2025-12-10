@@ -1,0 +1,567 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Khadamat Performance Dashboard</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    h1 {
+      color: #667eea;
+      font-size: 2.5em;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 1.1em;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      transition: transform 0.3s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .stat-value {
+      font-size: 2.5em;
+      font-weight: bold;
+      color: #667eea;
+      margin: 10px 0;
+    }
+
+    .stat-label {
+      color: #666;
+      font-size: 0.9em;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .stat-trend {
+      font-size: 0.85em;
+      margin-top: 10px;
+      padding: 5px 10px;
+      border-radius: 5px;
+      display: inline-block;
+    }
+
+    .trend-up {
+      background: #e3f2fd;
+      color: #1976d2;
+    }
+
+    .trend-down {
+      background: #fce4ec;
+      color: #c2185b;
+    }
+
+    .charts-section {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      margin-bottom: 30px;
+    }
+
+    .section-title {
+      font-size: 1.8em;
+      color: #333;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 3px solid #667eea;
+    }
+
+    .chart-container {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    .chart-title {
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 1.1em;
+    }
+
+    .performance-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    .performance-table th,
+    .performance-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .performance-table th {
+      background: #667eea;
+      color: white;
+      font-weight: bold;
+    }
+
+    .performance-table tr:hover {
+      background: #f5f5f5;
+    }
+
+    .compliance-badge {
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-weight: bold;
+      font-size: 0.85em;
+    }
+
+    .compliance-pass {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .compliance-fail {
+      background: #ffebee;
+      color: #c62828;
+    }
+
+    .recommendations {
+      background: #fff3e0;
+      padding: 20px;
+      border-radius: 10px;
+      border-left: 4px solid #ff9800;
+    }
+
+    .recommendation-item {
+      margin-bottom: 15px;
+      padding: 10px;
+      background: white;
+      border-radius: 5px;
+    }
+
+    .priority-high {
+      border-left: 3px solid #f44336;
+    }
+
+    .priority-medium {
+      border-left: 3px solid #ff9800;
+    }
+
+    .priority-low {
+      border-left: 3px solid #4caf50;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 30px;
+      color: white;
+      padding: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🚀 Khadamat Performance Dashboard</h1>
+      <p class="subtitle">Real-time performance metrics and historical trends</p>
+    </header>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Runs</div>
+        <div class="stat-value">2</div>
+        <div class="stat-trend trend-up">+2 data points</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Cache Hit Rate</div>
+        <div class="stat-value">86.1%%</div>
+        <div class="stat-trend trend-down">
+          Needs Improvement
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Estimated Savings</div>
+        <div class="stat-value">$$3504.00</div>
+        <div class="stat-trend trend-up">/year</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Cache Validation Status</div>
+        <div class="stat-value">VALIDATED_GOOD</div>
+        <div class="stat-trend trend-up">
+          GOOD
+        </div>
+      </div>
+    </div>
+
+    <!-- Flaky Test Detection Stats -->
+    <div class="stat-card">
+      <div class="stat-label">Flaky Test Detection</div>
+      <div class="stat-value">N/A</div>
+      <div class="stat-trend trend-down>
+        Not Available
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Detection Accuracy</div>
+      <div class="stat-value">N/A</div>
+      <div class="stat-trend trend-down">
+        Needs Improvement
+      </div>
+    </div>
+
+    <div class="charts-section">
+      <h2 class="section-title">📈 Performance Trends</h2>
+
+      <div class="chart-container">
+        <h3 class="chart-title">Page Load Time Trends</h3>
+        <canvas id="loadTimeChart" width="400" height="200"></canvas>
+      </div>
+
+      <div class="chart-container">
+        <h3 class="chart-title">API Response Time Trends</h3>
+        <canvas id="apiTimeChart" width="400" height="200"></canvas>
+      </div>
+
+      <div class="chart-container">
+        <h3 class="chart-title">Cache Effectiveness</h3>
+        <canvas id="cacheChart" width="400" height="200"></canvas>
+      </div>
+    </div>
+
+    <div class="charts-section">
+      <h2 class="section-title">📊 Detailed Performance Metrics</h2>
+
+      <table class="performance-table">
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Current Value</th>
+            <th>Budget</th>
+            <th>Compliance</th>
+            <th>Trend</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Homepage Load Time</td>
+            <td>1855ms</td>
+            <td>2500ms</td>
+            <td><span class="compliance-badge compliance-pass">
+              PASS
+            </span></td>
+            <td>↓ 4.15% worse</td>
+          </tr>
+
+          <tr>
+            <td>Services Page Load Time</td>
+            <td>3007ms</td>
+            <td>4000ms</td>
+            <td><span class="compliance-badge compliance-pass">
+              PASS
+            </span></td>
+            <td>↓ 8.52% worse</td>
+          </tr>
+
+          <tr>
+            <td>Login Page Load Time</td>
+            <td>1316ms</td>
+            <td>2500ms</td>
+            <td><span class="compliance-badge compliance-pass">
+              PASS
+            </span></td>
+            <td>↑ 30.37% better</td>
+          </tr>
+
+          <tr>
+            <td>API Auth Response Time</td>
+            <td>726ms</td>
+            <td>800ms</td>
+            <td><span class="compliance-badge compliance-pass">
+              PASS
+            </span></td>
+            <td>↓ 48.77% worse</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    
+    <div class="charts-section">
+      <h2 class="section-title">💡 Performance Recommendations</h2>
+      <div class="recommendations">
+        
+          <div class="recommendation-item priority-medium">
+            <strong>1. [MEDIUM] homepageLoadTime performance has regressed from 1781ms to 1855ms</strong>
+            <div style="color: #666; font-size: 0.9em; margin-top: 5px;">Investigate recent changes that may have impacted performance</div>
+          </div>
+        
+          <div class="recommendation-item priority-medium">
+            <strong>2. [MEDIUM] servicesPageLoadTime performance has regressed from 2771ms to 3007ms</strong>
+            <div style="color: #666; font-size: 0.9em; margin-top: 5px;">Investigate recent changes that may have impacted performance</div>
+          </div>
+        
+          <div class="recommendation-item priority-medium">
+            <strong>3. [MEDIUM] apiAuthResponseTime performance has regressed from 488ms to 726ms</strong>
+            <div style="color: #666; font-size: 0.9em; margin-top: 5px;">Investigate recent changes that may have impacted performance</div>
+          </div>
+        
+      </div>
+    </div>
+    
+
+    
+    <div class="charts-section">
+      <h2 class="section-title">🔍 Cache Validation Results</h2>
+
+      <div class="chart-container">
+        <h3 class="chart-title">Cache Effectiveness Summary</h3>
+        <table class="performance-table">
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Value</th>
+              <th>Status</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Validation Status</td>
+              <td>VALIDATED_GOOD</td>
+              <td><span class="compliance-badge compliance-pass">
+                GOOD
+              </span></td>
+              <td>✅ Cache system is performing well with good cost and time savings.</td>
+            </tr>
+            <tr>
+              <td>Cache Hit Rate</td>
+              <td>86.1%</td>
+              <td><span class="compliance-badge compliance-pass">
+                Optimal
+              </span></td>
+              <td>Overall cache effectiveness</td>
+            </tr>
+            <tr>
+              <td>Time Savings</td>
+              <td>115 seconds/run</td>
+              <td><span class="compliance-badge compliance-pass">Active</span></td>
+              <td>Time saved per CI run</td>
+            </tr>
+            <tr>
+              <td>Annual Cost Savings</td>
+              <td>$3504.00</td>
+              <td><span class="compliance-badge compliance-pass">Active</span></td>
+              <td>Estimated annual savings from caching</td>
+            </tr>
+            <tr>
+              <td>CI Duration Impact</td>
+              <td>38.3%</td>
+              <td><span class="compliance-badge compliance-pass">Active</span></td>
+              <td>Reduction in CI pipeline duration</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      
+    </div>
+    
+
+    <div class="charts-section">
+      <h2 class="section-title">📋 Recent Performance Runs</h2>
+      <table class="performance-table">
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Homepage</th>
+            <th>Services</th>
+            <th>Login</th>
+            <th>Cache Rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td>12/8/2025, 11:22:33 AM</td>
+              <td>1855ms</td>
+              <td>3007ms</td>
+              <td>1316ms</td>
+              <td>85.0%</td>
+            </tr>
+          
+            <tr>
+              <td>12/8/2025, 11:21:48 AM</td>
+              <td>1781ms</td>
+              <td>2771ms</td>
+              <td>1890ms</td>
+              <td>85.0%</td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  
+
+  <footer>
+    <p>🚀 Performance Dashboard | Generated: 12/8/2025, 11:46:12 AM</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Load time chart
+    const loadTimeCtx = document.getElementById('loadTimeChart').getContext('2d');
+    new Chart(loadTimeCtx, {
+      type: 'line',
+      data: {
+        labels: ["12/8/2025","12/8/2025"],
+        datasets: [
+          {
+            label: 'Homepage',
+            data: [1781,1855],
+            borderColor: '#667eea',
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            tension: 0.4
+          },
+          {
+            label: 'Services Page',
+            data: [2771,3007],
+            borderColor: '#764ba2',
+            backgroundColor: 'rgba(118, 75, 162, 0.1)',
+            tension: 0.4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'top' },
+          title: { display: true, text: 'Page Load Time Trends (ms)' }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+
+    // API time chart
+    const apiTimeCtx = document.getElementById('apiTimeChart').getContext('2d');
+    new Chart(apiTimeCtx, {
+      type: 'line',
+      data: {
+        labels: ["12/8/2025","12/8/2025"],
+        datasets: [
+          {
+            label: 'Auth API',
+            data: [488,726],
+            borderColor: '#f093fb',
+            backgroundColor: 'rgba(240, 147, 251, 0.1)',
+            tension: 0.4
+          },
+          {
+            label: 'Services API',
+            data: [976,639],
+            borderColor: '#4facfe',
+            backgroundColor: 'rgba(79, 172, 254, 0.1)',
+            tension: 0.4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'top' },
+          title: { display: true, text: 'API Response Time Trends (ms)' }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+
+    // Cache chart
+    const cacheCtx = document.getElementById('cacheChart').getContext('2d');
+    new Chart(cacheCtx, {
+      type: 'bar',
+      data: {
+        labels: ["12/8/2025","12/8/2025"],
+        datasets: [{
+          label: 'Cache Hit Rate',
+          data: [85,85],
+          backgroundColor: 'rgba(102, 126, 234, 0.7)',
+          borderColor: '#667eea',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'top' },
+          title: { display: true, text: 'Cache Hit Rate (%)' }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

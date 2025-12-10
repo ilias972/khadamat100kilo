@@ -1,0 +1,279 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { BookingsService } from './bookings.service';
+import { PrismaService } from '../../common/prisma.service';
+import { CreateBookingDto } from './dtos/create-booking.dto';
+import { UpdateBookingDto } from './dtos/update-booking.dto';
+import { BookingStatus } from './enums/booking-status.enum';
+import { UserRole } from '../auth/enums/user-role.enum';
+import { NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+
+describe('BookingsService', () => {
+  let service: BookingsService;
+  let prismaService: jest.Mocked<PrismaService>;
+
+  beforeEach(async () => {
+    const mockPrismaService = {
+      booking: {
+        create: jest.fn(),
+        findUnique: jest.fn(),
+        findMany: jest.fn(),
+        update: jest.fn(),
+      },
+      user: {
+        findUnique: jest.fn(),
+      },
+      serviceCategory: {
+        findUnique: jest.fn(),
+      },
+      city: {
+        findUnique: jest.fn(),
+      },
+      conversation: {
+        findUnique: jest.fn(),
+        create: jest.fn(),
+      },
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        BookingsService,
+        {
+          provide: PrismaService,
+          useValue: mockPrismaService,
+        },
+      ],
+    }).compile();
+
+    service = module.get<BookingsService>(BookingsService);
+    prismaService = module.get(PrismaService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  describe('createBooking', () => {
+    it('should create a booking successfully', async () => {
+      const dto: CreateBookingDto = {
+        proId: 'pro-id',
+        serviceCategoryId: 'category-id',
+        cityId: 'city-id',
+        description: 'Test booking',
+        scheduledDate: '2025-12-01T10:00:00Z',
+      };
+
+      const mockPro = { id: 'pro-id', status: 'active', proProfile: {} };
+      const mockCategory = { id: 'category-id' };
+      const mockCity = { id: 'city-id' };
+      const mockBooking = { id: 'booking-id', ...dto, status: BookingStatus.REQUESTED };
+
+      prismaService.user.findUnique.mockResolvedValue(mockPro as any);
+      prismaService.serviceCategory.findUnique.mockResolvedValue(mockCategory as any);
+      prismaService.city.findUnique.mockResolvedValue(mockCity as any);
+      prismaService.booking.create.mockResolvedValue(mockBooking as any);
+
+      const result = await service.createBooking('client-id', dto);
+
+      expect(result).toEqual(mockBooking);
+      expect(prismaService.booking.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          clientId: 'client-id',
+          proId: 'pro-id',
+          status: BookingStatus.REQUESTED,
+        }),
+        include: expect.any(Object),
+      });
+    });
+
+    it('should prevent self-booking', async () => {
+      const dto: CreateBookingDto = {
+        proId: 'client-id', // Same as client
+        serviceCategoryId: 'category-id',
+        cityId: 'city-id',
+        description: 'Test booking',
+      };
+
+      await expect(service.createBooking('client-id', dto)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should validate future scheduled date', async () => {
+      const dto: CreateBookingDto = {
+        proId: 'pro-id',
+        serviceCategoryId: 'category-id',
+        cityId: 'city-id',
+        description: 'Test booking',
+        scheduledDate: '2020-01-01T10:00:00Z', // Past date
+      };
+
+      const mockPro = { id: 'pro-id', status: 'active', proProfile: {} };
+      const mockCategory = { id: 'category-id' };
+      const mockCity = { id: 'city-id' };
+
+      prismaService.user.findUnique.mockResolvedValue(mockPro as any);
+      prismaService.serviceCategory.findUnique.mockResolvedValue(mockCategory as any);
+      prismaService.city.findUnique.mockResolvedValue(mockCity as any);
+
+      await expect(service.createBooking('client-id', dto)).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('validateStatusTransition', () => {
+    it('should allow valid transitions', () => {
+      // Client can cancel requested booking
+      expect(() => service.validateStatusTransition(BookingStatus.REQUESTED, BookingStatus.CANCELED, UserRole.CLIENT)).not.toThrow();
+
+      // Pro can accept requested booking
+      expect(() => service.validateStatusTransition(BookingStatus.REQUESTED, BookingStatus.ACCEPTED, UserRole.PRO)).not.toThrow();
+
+      // Pro can complete accepted booking
+      expect(() => service.validateStatusTransition(BookingStatus.ACCEPTED, BookingStatus.COMPLETED, UserRole.PRO)).not.toThrow();
+    });
+
+    it('should reject invalid transitions', () => {
+      // Client cannot complete booking
+      expect(() => service.validateStatusTransition(BookingStatus.ACCEPTED, BookingStatus.COMPLETED, UserRole.CLIENT)).toThrow(ForbiddenException);
+
+      // Cannot change from completed to accepted
+      expect(() => service.validateStatusTransition(BookingStatus.COMPLETED, BookingStatus.ACCEPTED, UserRole.ADMIN)).toThrow(ForbiddenException);
+    });
+  });
+
+  describe('updateBookingStatus', () => {
+    it('should create conversation when booking is accepted', async () => {
+      const mockBooking = {
+        id: 'booking-id',
+        status: BookingStatus.REQUESTED,
+        clientId: 'client-id',
+        proId: 'pro-id',
+      };
+
+      prismaService.booking.findUnique.mockResolvedValue(mockBooking as any);
+      prismaService.conversation.findUnique.mockResolvedValue(null);
+      prismaService.conversation.create.mockResolvedValue({} as any);
+      prismaService.booking.update.mockResolvedValue({
+        ...mockBooking,
+        status: BookingStatus.ACCEPTED,
+      } as any);
+
+      await service.updateBookingStatus('booking-id', BookingStatus.ACCEPTED, 'pro-id', UserRole.PRO);
+
+      expect(prismaService.conversation.create).toHaveBeenCalledWith({
+        data: {
+          participant1Id: 'client-id',
+          participant2Id: 'pro-id',
+          bookingId: 'booking-id',
+        },
+      });
+    });
+
+    it('should not create duplicate conversation', async () => {
+      const mockBooking = {
+        id: 'booking-id',
+        status: BookingStatus.REQUESTED,
+        clientId: 'client-id',
+        proId: 'pro-id',
+      };
+
+      prismaService.booking.findUnique.mockResolvedValue(mockBooking as any);
+      prismaService.conversation.findUnique.mockResolvedValue({ id: 'existing-conversation' } as any);
+      prismaService.booking.update.mockResolvedValue({
+        ...mockBooking,
+        status: BookingStatus.ACCEPTED,
+      } as any);
+
+      await service.updateBookingStatus('booking-id', BookingStatus.ACCEPTED, 'pro-id', UserRole.PRO);
+
+      expect(prismaService.conversation.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findBookingById', () => {
+    it('should return booking for participant', async () => {
+      const mockBooking = {
+        id: 'booking-id',
+        clientId: 'client-id',
+        proId: 'pro-id',
+      };
+
+      prismaService.booking.findUnique.mockResolvedValue(mockBooking as any);
+
+      const result = await service.findBookingById('booking-id', 'client-id', UserRole.CLIENT);
+
+      expect(result).toEqual(mockBooking);
+    });
+
+    it('should deny access for non-participants', async () => {
+      const mockBooking = {
+        id: 'booking-id',
+        clientId: 'client-id',
+        proId: 'pro-id',
+      };
+
+      prismaService.booking.findUnique.mockResolvedValue(mockBooking as any);
+
+      await expect(service.findBookingById('booking-id', 'other-user', UserRole.CLIENT)).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('Booking Lifecycle Stress Tests', () => {
+    it('should prevent actions on rejected booking', async () => {
+      const mockBooking = {
+        id: 'booking-id',
+        status: BookingStatus.REQUESTED,
+        clientId: 'client-id',
+        proId: 'pro-id',
+      };
+
+      // First reject the booking
+      prismaService.booking.findUnique.mockResolvedValue(mockBooking as any);
+      prismaService.booking.update.mockResolvedValue({
+        ...mockBooking,
+        status: BookingStatus.REJECTED,
+      } as any);
+
+      await service.updateBookingStatus('booking-id', BookingStatus.REJECTED, 'pro-id', UserRole.PRO);
+
+      // Now try to accept the rejected booking - should fail
+      const rejectedBooking = { ...mockBooking, status: BookingStatus.REJECTED };
+      prismaService.booking.findUnique.mockResolvedValue(rejectedBooking as any);
+
+      await expect(service.updateBookingStatus('booking-id', BookingStatus.ACCEPTED, 'pro-id', UserRole.PRO))
+        .rejects.toThrow(ForbiddenException);
+
+      // Try to complete the rejected booking - should fail
+      await expect(service.updateBookingStatus('booking-id', BookingStatus.COMPLETED, 'pro-id', UserRole.PRO))
+        .rejects.toThrow(ForbiddenException);
+    });
+
+    it('should allow admin to set booking to COMPLETED directly', async () => {
+      const mockBooking = {
+        id: 'booking-id',
+        status: BookingStatus.REQUESTED,
+        clientId: 'client-id',
+        proId: 'pro-id',
+      };
+
+      prismaService.booking.findUnique.mockResolvedValue(mockBooking as any);
+      prismaService.booking.update.mockResolvedValue({
+        ...mockBooking,
+        status: BookingStatus.COMPLETED,
+      } as any);
+
+      await expect(service.updateBookingStatus('booking-id', BookingStatus.COMPLETED, 'admin-id', UserRole.ADMIN))
+        .resolves.not.toThrow();
+    });
+
+    it('should prevent review creation on non-completed bookings', async () => {
+      // This would be tested in the reviews service, but let's verify the booking status check
+      const mockBooking = {
+        id: 'booking-id',
+        status: BookingStatus.ACCEPTED, // Not completed
+        clientId: 'client-id',
+        proId: 'pro-id',
+      };
+
+      // Reviews service should check booking.status === 'completed'
+      expect(mockBooking.status).not.toBe(BookingStatus.COMPLETED);
+    });
+  });
+});

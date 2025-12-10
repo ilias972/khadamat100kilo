@@ -1,0 +1,286 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { DisputesService } from './disputes.service';
+import { PrismaService } from '../../common/prisma.service';
+import { CreateDisputeDto } from './dtos/create-dispute.dto';
+import { ResolveDisputeDto } from './dtos/resolve-dispute.dto';
+import { NotFoundException, ForbiddenException, ConflictException, BadRequestException } from '@nestjs/common';
+
+describe('DisputesService', () => {
+  let service: DisputesService;
+  let prismaService: jest.Mocked<PrismaService>;
+
+  beforeEach(async () => {
+    const mockPrismaService = {
+      dispute: {
+        findUnique: jest.fn(),
+        findMany: jest.fn(),
+        create: jest.fn(),
+        update: jest.fn(),
+      },
+      booking: {
+        findUnique: jest.fn(),
+      },
+      $transaction: jest.fn(),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        DisputesService,
+        {
+          provide: PrismaService,
+          useValue: mockPrismaService,
+        },
+      ],
+    }).compile();
+
+    service = module.get<DisputesService>(DisputesService);
+    prismaService = module.get(PrismaService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  describe('createDispute', () => {
+    it('should throw BadRequestException for missing bookingId', async () => {
+      const dto: CreateDisputeDto = { bookingId: '', reason: 'Test reason' };
+
+      await expect(service.createDispute('user-id', 'client', dto)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for missing reason', async () => {
+      const dto: CreateDisputeDto = { bookingId: 'booking-id', reason: '' };
+
+      await expect(service.createDispute('user-id', 'client', dto)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw NotFoundException when booking not found', async () => {
+      const dto: CreateDisputeDto = { bookingId: 'non-existent-booking', reason: 'Test reason' };
+
+      prismaService.$transaction.mockImplementation(async (callback) => {
+        return callback({
+          booking: { findUnique: jest.fn().mockResolvedValue(null) },
+          dispute: { findUnique: jest.fn(), create: jest.fn() },
+        });
+      });
+
+      await expect(service.createDispute('user-id', 'client', dto)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when user is not part of booking', async () => {
+      const dto: CreateDisputeDto = { bookingId: 'booking-id', reason: 'Test reason' };
+      const mockBooking = { id: 'booking-id', clientId: 'other-user', proId: 'another-user' };
+
+      prismaService.$transaction.mockImplementation(async (callback) => {
+        return callback({
+          booking: { findUnique: jest.fn().mockResolvedValue(mockBooking) },
+          dispute: { findUnique: jest.fn(), create: jest.fn() },
+        });
+      });
+
+      await expect(service.createDispute('user-id', 'client', dto)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw ConflictException when dispute already exists', async () => {
+      const dto: CreateDisputeDto = { bookingId: 'booking-id', reason: 'Test reason' };
+      const mockBooking = { id: 'booking-id', clientId: 'user-id', proId: 'another-user' };
+      const mockDispute = { id: 'dispute-id' };
+
+      prismaService.$transaction.mockImplementation(async (callback) => {
+        return callback({
+          booking: { findUnique: jest.fn().mockResolvedValue(mockBooking) },
+          dispute: { findUnique: jest.fn().mockResolvedValue(mockDispute), create: jest.fn() },
+        });
+      });
+
+      await expect(service.createDispute('user-id', 'client', dto)).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('resolveDispute', () => {
+    it('should throw BadRequestException for missing dispute id', async () => {
+      const dto: ResolveDisputeDto = { status: 'resolved' };
+
+      await expect(service.resolveDispute('', 'admin-id', dto)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for missing admin id', async () => {
+      const dto: ResolveDisputeDto = { status: 'resolved' };
+
+      await expect(service.resolveDispute('dispute-id', '', dto)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for invalid status', async () => {
+      const dto: ResolveDisputeDto = { status: 'invalid' as any };
+
+      await expect(service.resolveDispute('dispute-id', 'admin-id', dto)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw NotFoundException when dispute not found', async () => {
+      const dto: ResolveDisputeDto = { status: 'resolved' };
+
+      prismaService.$transaction.mockImplementation(async (callback) => {
+        return callback({
+          dispute: { findUnique: jest.fn().mockResolvedValue(null), update: jest.fn() },
+        });
+      });
+
+      await expect(service.resolveDispute('non-existent-dispute', 'admin-id', dto)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ConflictException when dispute is already resolved', async () => {
+      const dto: ResolveDisputeDto = { status: 'resolved' };
+      const mockDispute = { id: 'dispute-id', status: 'resolved' };
+
+      prismaService.$transaction.mockImplementation(async (callback) => {
+        return callback({
+          dispute: { findUnique: jest.fn().mockResolvedValue(mockDispute), update: jest.fn() },
+        });
+      });
+
+      await expect(service.resolveDispute('dispute-id', 'admin-id', dto)).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('getDisputeById', () => {
+    it('should throw BadRequestException for missing dispute id', async () => {
+      await expect(service.getDisputeById('', 'user-id', 'client')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for missing user id', async () => {
+      await expect(service.getDisputeById('dispute-id', '', 'client')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw NotFoundException when dispute not found', async () => {
+      prismaService.dispute.findUnique.mockResolvedValue(null);
+
+      await expect(service.getDisputeById('non-existent-dispute', 'user-id', 'client')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when user has no access', async () => {
+      const mockDispute = {
+        id: 'dispute-id',
+        booking: { clientId: 'other-user', proId: 'another-user' },
+      };
+
+      prismaService.dispute.findUnique.mockResolvedValue(mockDispute as any);
+
+      await expect(service.getDisputeById('dispute-id', 'user-id', 'client')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('getUserDisputes', () => {
+    it('should throw BadRequestException for missing user id', async () => {
+      await expect(service.getUserDisputes('')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('Dispute Robustness Tests', () => {
+    it('should prevent duplicate disputes for the same booking', async () => {
+      const dto: CreateDisputeDto = { bookingId: 'booking-id', reason: 'Service not completed' };
+      const mockBooking = { id: 'booking-id', clientId: 'client-id', proId: 'pro-id' };
+      const existingDispute = { id: 'existing-dispute-id', bookingId: 'booking-id' };
+
+      prismaService.$transaction.mockImplementation(async (callback) => {
+        return callback({
+          booking: { findUnique: jest.fn().mockResolvedValue(mockBooking) },
+          dispute: {
+            findUnique: jest.fn().mockResolvedValue(existingDispute),
+            create: jest.fn()
+          },
+        });
+      });
+
+      await expect(service.createDispute('client-id', 'client', dto)).rejects.toThrow(ConflictException);
+    });
+
+    it('should allow client to create dispute for their booking', async () => {
+      const dto: CreateDisputeDto = { bookingId: 'booking-id', reason: 'Service not completed' };
+      const mockBooking = { id: 'booking-id', clientId: 'client-id', proId: 'pro-id' };
+      const mockDispute = { id: 'dispute-id', ...dto, initiatedBy: 'client' };
+
+      prismaService.$transaction.mockImplementation(async (callback) => {
+        return callback({
+          booking: { findUnique: jest.fn().mockResolvedValue(mockBooking) },
+          dispute: {
+            findUnique: jest.fn().mockResolvedValue(null),
+            create: jest.fn().mockResolvedValue(mockDispute)
+          },
+        });
+      });
+
+      const result = await service.createDispute('client-id', 'client', dto);
+      expect(result.initiatedBy).toBe('client');
+    });
+
+    it('should allow pro to create dispute for their booking', async () => {
+      const dto: CreateDisputeDto = { bookingId: 'booking-id', reason: 'Payment issue' };
+      const mockBooking = { id: 'booking-id', clientId: 'client-id', proId: 'pro-id' };
+      const mockDispute = { id: 'dispute-id', ...dto, initiatedBy: 'pro' };
+
+      prismaService.$transaction.mockImplementation(async (callback) => {
+        return callback({
+          booking: { findUnique: jest.fn().mockResolvedValue(mockBooking) },
+          dispute: {
+            findUnique: jest.fn().mockResolvedValue(null),
+            create: jest.fn().mockResolvedValue(mockDispute)
+          },
+        });
+      });
+
+      const result = await service.createDispute('pro-id', 'pro', dto);
+      expect(result.initiatedBy).toBe('pro');
+    });
+
+    it('should deny non-admin from resolving disputes', async () => {
+      const dto: ResolveDisputeDto = { status: 'resolved' };
+      const mockDispute = { id: 'dispute-id', status: 'open' };
+
+      prismaService.$transaction.mockImplementation(async (callback) => {
+        return callback({
+          dispute: {
+            findUnique: jest.fn().mockResolvedValue(mockDispute),
+            update: jest.fn()
+          },
+        });
+      });
+
+      await expect(service.resolveDispute('dispute-id', 'client-id', dto)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should prevent resolving already resolved disputes', async () => {
+      const dto: ResolveDisputeDto = { status: 'resolved' };
+      const mockDispute = { id: 'dispute-id', status: 'resolved' };
+
+      prismaService.$transaction.mockImplementation(async (callback) => {
+        return callback({
+          dispute: {
+            findUnique: jest.fn().mockResolvedValue(mockDispute),
+            update: jest.fn()
+          },
+        });
+      });
+
+      await expect(service.resolveDispute('dispute-id', 'admin-id', dto)).rejects.toThrow(ConflictException);
+    });
+
+    it('should allow admin to resolve open disputes', async () => {
+      const dto: ResolveDisputeDto = { status: 'resolved', resolution: 'Issue resolved' };
+      const mockDispute = { id: 'dispute-id', status: 'open' };
+      const resolvedDispute = { ...mockDispute, status: 'resolved', resolution: 'Issue resolved' };
+
+      prismaService.$transaction.mockImplementation(async (callback) => {
+        return callback({
+          dispute: {
+            findUnique: jest.fn().mockResolvedValue(mockDispute),
+            update: jest.fn().mockResolvedValue(resolvedDispute)
+          },
+        });
+      });
+
+      const result = await service.resolveDispute('dispute-id', 'admin-id', dto);
+      expect(result.status).toBe('resolved');
+      expect(result.resolution).toBe('Issue resolved');
+    });
+  });
+});
