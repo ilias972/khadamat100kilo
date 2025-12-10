@@ -4,6 +4,8 @@ import {
   IsString,
   IsIn,
   MinLength,
+  MaxLength,
+  Matches,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -15,6 +17,8 @@ export class RegisterDto {
   @ApiProperty({ description: 'User password', minLength: 8, example: 'password123' })
   @IsString()
   @MinLength(8)
+  @MaxLength(50)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/)
   password: string;
 
   @ApiProperty({ description: 'User role', enum: ['CLIENT', 'PRO'], example: 'CLIENT' })
@@ -23,10 +27,12 @@ export class RegisterDto {
 
   @ApiProperty({ description: 'First name', example: 'John' })
   @IsString()
+  @MinLength(2)
   firstName: string;
 
   @ApiProperty({ description: 'Last name', example: 'Doe' })
   @IsString()
+  @MinLength(2)
   lastName: string;
 
   @ApiProperty({ description: 'Phone number', example: '+212600000000' })
