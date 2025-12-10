@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Res, Req } from '@nestjs/common';
+import { Controller, Post, Body, Res, Req, ValidationPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
@@ -66,7 +66,10 @@ export class AuthController {
   @ApiOperation({ summary: 'User registration' })
   @ApiResponse({ status: 201, description: 'User successfully registered' })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  async signup(@Body() dto: SignupDto, @Res({ passthrough: true }) response: Response) {
+  async signup(
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) dto: SignupDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
     const result = await this.authService.signup(dto);
 
     // Set HttpOnly cookies for tokens
@@ -92,7 +95,10 @@ export class AuthController {
   @ApiOperation({ summary: 'User registration with performance metrics' })
   @ApiResponse({ status: 201, description: 'User successfully registered' })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) response: Response) {
+  async register(
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) dto: RegisterDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
     const result = await this.authService.register(dto);
 
     // Set HttpOnly cookies for tokens
@@ -118,7 +124,10 @@ export class AuthController {
   @ApiOperation({ summary: 'User login' })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) response: Response) {
+  async login(
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) dto: LoginDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
     const result = await this.authService.login(dto);
 
     // Set HttpOnly cookies for tokens

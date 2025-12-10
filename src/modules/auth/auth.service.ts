@@ -153,6 +153,7 @@ async register(dto: RegisterDto) {
   const metrics = {
     start: Date.now(),
     checkEmail: 0,
+    checkPhone: 0,
     hashPassword: 0,
     createUser: 0,
     generateTokens: 0,
@@ -160,7 +161,6 @@ async register(dto: RegisterDto) {
   };
 
   try {
-    // 1. Vérifier email existant
     const t1 = Date.now();
     const existingUser = await this.prisma.user.findUnique({
       where: { email: dto.email },
@@ -171,12 +171,20 @@ async register(dto: RegisterDto) {
       throw new ConflictException('Email déjà utilisé');
     }
 
-    // 2. Hash du mot de passe
+    const t1b = Date.now();
+    const existingPhone = await this.prisma.user.findUnique({
+      where: { phone: dto.phone },
+    });
+    metrics.checkPhone = Date.now() - t1b;
+
+    if (existingPhone) {
+      throw new ConflictException('Téléphone déjà utilisé');
+    }
+
     const t2 = Date.now();
     const hashedPassword = await bcrypt.hash(dto.password, 10);
     metrics.hashPassword = Date.now() - t2;
 
-    // 3. Créer l'utilisateur et son profil
     const t3 = Date.now();
     const user = await this.prisma.user.create({
       data: {
@@ -197,7 +205,7 @@ async register(dto: RegisterDto) {
             create: {
               firstName: dto.firstName,
               lastName: dto.lastName,
-              profession: 'General Service Provider', // Default profession for PRO users
+              profession: 'General Service Provider',
             },
           },
         }),
@@ -209,19 +217,18 @@ async register(dto: RegisterDto) {
     });
     metrics.createUser = Date.now() - t3;
 
-    // 4. Générer les tokens JWT
     const t4 = Date.now();
     const tokens = this.generateTokens(user);
     metrics.generateTokens = Date.now() - t4;
 
-    // Total
     metrics.total = Date.now() - metrics.start;
 
-    // Log les métriques
     this.appLogger.log(`[REGISTRATION METRICS] ${JSON.stringify(metrics)}`);
 
     if (metrics.total > 2000) {
-      this.appLogger.warn(`[SLOW REGISTRATION] Total: ${metrics.total}ms - Email check: ${metrics.checkEmail}ms, Hash: ${metrics.hashPassword}ms, Create: ${metrics.createUser}ms, Tokens: ${metrics.generateTokens}ms`);
+      this.appLogger.warn(
+        `[SLOW REGISTRATION] Total: ${metrics.total}ms - Email check: ${metrics.checkEmail}ms, Phone check: ${metrics.checkPhone}ms, Hash: ${metrics.hashPassword}ms, Create: ${metrics.createUser}ms, Tokens: ${metrics.generateTokens}ms`,
+      );
     }
 
     return {
@@ -236,45 +243,56 @@ async register(dto: RegisterDto) {
 }
 
 async login(dto: LoginDto) {
-const { emailOrPhone, password } = dto;
+  const { email, password } = dto;
 
-const user = await this.prisma.user.findFirst({
-  where: {
-    OR: [{ email: emailOrPhone }, { phone: emailOrPhone }],
-  },
-  include: {
-    clientProfile: true,
-    proProfile: true,
-  },
-});
+  const user = await this.prisma.user.findUnique({
+    where: { email },
+    include: {
+      clientProfile: true,
+      proProfile: true,
+    },
+  });
 
-if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+  const invalidCredentials =
+    !user || !user.passwordHash || !(await bcrypt.compare(password, user.passwordHash));
+
+  if (invalidCredentials) {
+    this.businessLogger.logSecurityEvent(
+      'LOGIN_FAILED',
+      user?.id || 'unknown',
+      undefined,
+      undefined,
+      { email },
+    );
+    throw new UnauthorizedException('Invalid credentials');
+  }
+
+  if (!user.isEmailVerified) {
+    this.businessLogger.logSecurityEvent(
+      'LOGIN_FAILED',
+      user.id,
+      undefined,
+      undefined,
+      { reason: 'EMAIL_NOT_VERIFIED', email },
+    );
+    throw new UnauthorizedException('Please verify your email before logging in');
+  }
+
   this.businessLogger.logSecurityEvent(
-    'LOGIN_FAILED',
-    user?.id || 'unknown',
+    'LOGIN_SUCCESS',
+    user.id,
     undefined,
     undefined,
-    { emailOrPhone },
+    { email },
   );
-  throw new UnauthorizedException('Invalid credentials');
-}
 
-this.businessLogger.logSecurityEvent(
-  'LOGIN_SUCCESS',
-  user.id,
-  undefined,
-  undefined,
-  { emailOrPhone },
-);
+  await this.prisma.user.update({
+    where: { id: user.id },
+    data: { lastLogin: new Date() },
+  });
 
-await this.prisma.user.update({
-  where: { id: user.id },
-  data: { lastLogin: new Date() },
-});
-
-const tokens = this.generateTokens(user);
-// SECURITY FIX: Sanitize user object
-return { user: this.sanitizeUser(user), ...tokens };
+  const tokens = this.generateTokens(user);
+  return { user: this.sanitizeUser(user), ...tokens };
 }
 
 async refreshToken(refreshToken: string) {
