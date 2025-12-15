@@ -1,52 +1,42 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Body,
-  Param,
-  UseGuards,
-  Request,
-  UsePipes,
-  ValidationPipe,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Req } from '@nestjs/common';
 import { MessagingService } from './messaging.service';
-import { SendMessageDto, CreateConversationDto } from './dtos/send-message.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
-@Controller('conversations')
+@Controller('messaging')
 @UseGuards(JwtAuthGuard)
-@UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
 export class MessagingController {
   constructor(private readonly messagingService: MessagingService) {}
 
-  @Get()
-  async getConversations(@Request() req) {
+  // 1. Récupérer la liste des conversations
+  @Get('conversations')
+  async getUserConversations(@Req() req) {
     return this.messagingService.getUserConversations(req.user.id);
   }
 
-  @Get(':id/messages')
-  async getConversationMessages(
-    @Param('id') conversationId: string,
-    @Request() req,
-  ) {
-    const conversation = await this.messagingService.getConversation(
-      conversationId,
-      req.user.id,
-    );
-
-    // Mark messages as read when fetching
-    await this.messagingService.markMessagesAsRead(conversationId, req.user.id);
-
-    return conversation.messages;
+  // 2. Compter les non-lus
+  @Get('unread-count')
+  async getUnreadCount(@Req() req) {
+    return this.messagingService.getUnreadCount(req.user.id);
   }
 
+  // 3. ✅ NOUVELLE ROUTE : Récupérer UNE conversation (avec ses messages)
+  @Get(':id')
+  async getConversation(@Param('id') id: string, @Req() req) {
+    return this.messagingService.getConversation(id, req.user.id);
+  }
+
+  // 4. Envoyer un message
   @Post(':id/messages')
   async sendMessage(
     @Param('id') conversationId: string,
-    @Request() req,
-    @Body() dto: SendMessageDto,
+    @Req() req,
+    @Body() body: { content: string; attachments?: any[] }
   ) {
-    return this.messagingService.sendMessage(conversationId, req.user.id, dto);
+    return this.messagingService.sendMessage(
+      conversationId,
+      req.user.id,
+      body.content,
+      body.attachments
+    );
   }
 }

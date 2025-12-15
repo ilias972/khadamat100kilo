@@ -9,7 +9,7 @@ import { Observable, of } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { createHash } from 'crypto';
 
 @Injectable()
@@ -20,7 +20,8 @@ export class CacheInterceptor implements NestInterceptor {
     context: ExecutionContext,
     next: CallHandler,
   ): Promise<Observable<any>> {
-    const request = context.switchToHttp().getRequest();
+    // ✅ CORRECTION : On type explicitement la Request et la Response
+    const request = context.switchToHttp().getRequest<Request>();
     const response = context.switchToHttp().getResponse<Response>();
     const method = request.method;
     const url = request.url;
@@ -30,7 +31,7 @@ export class CacheInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    // Check if endpoint should be cached (you can add custom logic here)
+    // Check if endpoint should be cached
     const shouldCache = this.shouldCacheEndpoint(url);
     if (!shouldCache) {
       return next.handle();
@@ -41,8 +42,10 @@ export class CacheInterceptor implements NestInterceptor {
 
     // Check for If-None-Match header (ETag)
     const ifNoneMatch = request.headers['if-none-match'];
+
     if (ifNoneMatch) {
-      const cachedData = await this.cacheManager.get(cacheKey);
+      // ✅ CORRECTION : On utilise unknown au lieu de any pour plus de sécurité
+      const cachedData = await this.cacheManager.get<unknown>(cacheKey);
       if (cachedData) {
         const etag = this.generateETag(cachedData);
         if (ifNoneMatch === etag) {
@@ -53,11 +56,11 @@ export class CacheInterceptor implements NestInterceptor {
     }
 
     // Check cache
-    const cachedData = await this.cacheManager.get(cacheKey);
+    const cachedData = await this.cacheManager.get<unknown>(cacheKey);
     if (cachedData) {
       const etag = this.generateETag(cachedData);
       response.set({
-        'ETag': etag,
+        ETag: etag,
         'Cache-Control': 'public, max-age=300', // 5 minutes
         'X-Cache': 'HIT',
       });
@@ -75,7 +78,7 @@ export class CacheInterceptor implements NestInterceptor {
         if (data) {
           const etag = this.generateETag(data);
           response.set({
-            'ETag': etag,
+            ETag: etag,
             'Cache-Control': 'public, max-age=300', // 5 minutes
             'X-Cache': 'MISS',
           });
@@ -97,18 +100,23 @@ export class CacheInterceptor implements NestInterceptor {
     return cacheableEndpoints.some((endpoint) => url.includes(endpoint));
   }
 
-  private generateCacheKey(request: any): string {
+  // ✅ CORRECTION : request est typé comme Request (Express)
+  private generateCacheKey(request: Request): string {
     const { method, url, query, user } = request;
+    
+    // On construit l'objet clé proprement
     const keyData = {
       method,
       url,
       query,
-      userId: user?.id,
+      // TypeScript sait maintenant que user existe grâce à notre fichier express.d.ts
+      userId: user?.sub ?? user?.id, 
     };
     return `api:${createHash('md5').update(JSON.stringify(keyData)).digest('hex')}`;
   }
 
-  private generateETag(data: any): string {
+  // ✅ CORRECTION : data peut être inconnu, c'est acceptable ici
+  private generateETag(data: unknown): string {
     const hash = createHash('md5').update(JSON.stringify(data)).digest('hex');
     return `"${hash}"`;
   }

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma.service';
-import { BookingStatus } from '@prisma/client';
+import { BookingStatus, Role } from '@prisma/client';
 
 @Injectable()
 export class StatisticsService {
@@ -45,6 +45,38 @@ export class StatisticsService {
       activeBookings,
       completedBookings,
       totalSpent,
+    };
+  }
+
+  // Platform-level public stats for homepage and marketing
+  async getPlatformStats() {
+    const [
+      totalUsers,
+      totalPros,
+      totalBookings,
+      activeBookings,
+      totalServices,
+      totalCities,
+    ] = await Promise.all([
+      this.prisma.user.count(),
+      this.prisma.user.count({ where: { role: Role.PRO } }),
+      this.prisma.booking.count(),
+      this.prisma.booking.count({
+        where: {
+          status: { in: [BookingStatus.QUOTED, BookingStatus.ACCEPTED] },
+        },
+      }),
+      this.prisma.proService.count(),
+      this.prisma.city.count(),
+    ]);
+
+    return {
+      totalUsers,
+      totalPros,
+      totalBookings,
+      activeBookings,
+      totalServices,
+      totalCities,
     };
   }
 

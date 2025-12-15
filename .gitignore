@@ -56,3 +56,15 @@ pids
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 /generated/prisma
+
+# Test & Reports
+test-results/
+playwright-report/
+test-backups/
+*-report*.json
+build-output*.txt
+lighthouse-report*.json
+
+# SQLite
+*.db
+*.db-journal

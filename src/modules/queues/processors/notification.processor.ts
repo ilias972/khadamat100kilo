@@ -50,20 +50,27 @@ export class NotificationProcessor extends WorkerHost {
         if (user?.email) {
           // Here you would inject and use the email queue
           // For now, we'll just log it
-          this.logger.log(`Would send email notification to ${user.email}: ${title}`);
+          this.logger.log(
+            `Would send email notification to ${user.email}: ${title}`,
+          );
         }
       }
 
       // If push channel is specified, handle push notifications
       if (channel === 'push') {
         // Handle push notification logic here
-        this.logger.log(`Would send push notification to user ${userId}: ${title}`);
+        this.logger.log(
+          `Would send push notification to user ${userId}: ${title}`,
+        );
       }
 
       this.logger.log(`Notification created for user ${userId}: ${type}`);
       return;
     } catch (error) {
-      this.logger.error(`Failed to process notification for user ${userId}:`, error);
+      this.logger.error(
+        `Failed to process notification for user ${userId}:`,
+        error,
+      );
       throw error;
     }
   }

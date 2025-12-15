@@ -2,6 +2,7 @@ import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import * as nodemailer from 'nodemailer';
+import { SentMessageInfo } from 'nodemailer'; // ✅ Import du type pour le résultat
 
 export interface EmailJobData {
   to: string;
@@ -31,7 +32,8 @@ export class EmailProcessor extends WorkerHost {
     });
   }
 
-  async process(job: Job<EmailJobData>): Promise<void> {
+  // ✅ CORRECTION : Retourne Promise<any> car on renvoie l'objet 'result' à la fin
+  async process(job: Job<EmailJobData>): Promise<any> {
     this.logger.debug(`Processing email job ${job.id}`);
 
     const { to, subject, html, text, from } = job.data;
@@ -45,12 +47,16 @@ export class EmailProcessor extends WorkerHost {
         text,
       };
 
-      const result = await this.transporter.sendMail(mailOptions);
+      // ✅ CORRECTION : Typage explicite du résultat pour éviter "unsafe member access"
+      const result: SentMessageInfo = await this.transporter.sendMail(mailOptions);
+      
       this.logger.log(`Email sent successfully to ${to}: ${result.messageId}`);
 
       return result;
     } catch (error) {
-      this.logger.error(`Failed to send email to ${to}:`, error);
+      // ✅ CORRECTION : Gestion propre de l'erreur inconnue
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to send email to ${to}: ${errorMessage}`, error);
       throw error;
     }
   }

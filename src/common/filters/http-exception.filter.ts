@@ -29,7 +29,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     let statusCode: number;
     let message: string;
     let errorCode: string | undefined;
-    let details: any;
+    let details: unknown;
 
     if (exception instanceof HttpException) {
       statusCode = exception.getStatus();

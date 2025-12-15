@@ -10,6 +10,7 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
+import { Request as ExpressRequest } from 'express';  // ✅ AJOUTÉ
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto } from './dtos/create-review.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -23,10 +24,10 @@ export class ReviewsController {
   @Post('bookings/:bookingId/review')
   async createReview(
     @Param('bookingId') bookingId: string,
-    @Request() req,
+    @Request() req: ExpressRequest,  // ✅ TYPÉ
     @Body() dto: CreateReviewDto,
   ) {
-    return this.reviewsService.createReview(bookingId, req.user.sub, dto);
+    return this.reviewsService.createReview(bookingId, req.user!.id, dto);  // ✅ .id au lieu de .sub
   }
 
   @Get('pros/:proId/reviews')
@@ -35,11 +36,10 @@ export class ReviewsController {
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '10',
   ) {
-    return this.reviewsService.getProReviews(
-      proId,
-      parseInt(page),
-      parseInt(limit),
-    );
+    const pageNum = Math.max(1, parseInt(page) || 1);  // ✅ Validation
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit) || 10));  // ✅ Max 50
+    
+    return this.reviewsService.getProReviews(proId, pageNum, limitNum);
   }
 
   @Get('pro/:proId/stats')

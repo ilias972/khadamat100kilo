@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
+import { Queue, JobsOptions } from 'bullmq'; // ✅ Ajout de JobsOptions
 import { EmailJobData } from './processors/email.processor';
 import { NotificationJobData } from './processors/notification.processor';
 
@@ -12,7 +12,8 @@ export class QueueService {
   ) {}
 
   // Email queue methods
-  async addEmailJob(data: EmailJobData, options?: any) {
+  // ✅ CORRECTION : options est typé 'JobsOptions' au lieu de 'any'
+  async addEmailJob(data: EmailJobData, options?: JobsOptions) {
     return this.emailQueue.add('send-email', data, {
       priority: 1,
       delay: 0,
@@ -20,7 +21,7 @@ export class QueueService {
     });
   }
 
-  async addBulkEmailJobs(jobs: { data: EmailJobData; options?: any }[]) {
+  async addBulkEmailJobs(jobs: { data: EmailJobData; options?: JobsOptions }[]) {
     const bullJobs = jobs.map((job) => ({
       name: 'send-email',
       data: job.data,
@@ -34,7 +35,10 @@ export class QueueService {
   }
 
   // Notification queue methods
-  async addNotificationJob(data: NotificationJobData, options?: any) {
+  async addNotificationJob(
+    data: NotificationJobData,
+    options?: JobsOptions,
+  ) {
     return this.notificationQueue.add('send-notification', data, {
       priority: 2,
       delay: 0,
@@ -42,7 +46,9 @@ export class QueueService {
     });
   }
 
-  async addBulkNotificationJobs(jobs: { data: NotificationJobData; options?: any }[]) {
+  async addBulkNotificationJobs(
+    jobs: { data: NotificationJobData; options?: JobsOptions }[],
+  ) {
     const bullJobs = jobs.map((job) => ({
       name: 'send-notification',
       data: job.data,
@@ -92,8 +98,15 @@ export class QueueService {
     };
   }
 
-  async cleanOldJobs(queue: 'email' | 'notification', grace = 24 * 60 * 60 * 1000) {
-    const targetQueue = queue === 'email' ? this.emailQueue : this.notificationQueue;
+  async cleanOldJobs(
+    queue: 'email' | 'notification',
+    grace = 24 * 60 * 60 * 1000,
+  ) {
+    const targetQueue =
+      queue === 'email' ? this.emailQueue : this.notificationQueue;
+    
+    // Note: clean is deprecated in newer BullMQ versions, but we keep logic for now
+    // to avoid breaking functionality, just fixing types.
     await targetQueue.clean(grace, 100, 'completed');
     await targetQueue.clean(grace, 100, 'failed');
   }

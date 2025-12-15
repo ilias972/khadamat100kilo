@@ -142,14 +142,14 @@ export const getCashMonthlyTransactions = (month?: string): CashTransaction[] =>
   );
 };
 
-export const getCashRevenueByMonth = (): { month: string; revenue: number }[] => {
+export const getCashRevenueByMonth = () => {
   // Mock monthly revenue data for the last 6 months
   return [
-    { month: '2024-06', revenue: 2100 },
-    { month: '2024-07', revenue: 2350 },
-    { month: '2024-08', revenue: 2580 },
-    { month: '2024-09', revenue: 2720 },
-    { month: '2024-10', revenue: 2800 },
-    { month: '2024-11', revenue: 2930 }
+    { month: '2024-06', label: 'Juin', revenue: 2100, bookings: 12 },
+    { month: '2024-07', label: 'Juillet', revenue: 2350, bookings: 14 },
+    { month: '2024-08', label: 'Août', revenue: 2580, bookings: 16 },
+    { month: '2024-09', label: 'Septembre', revenue: 2720, bookings: 18 },
+    { month: '2024-10', label: 'Octobre', revenue: 2800, bookings: 19 },
+    { month: '2024-11', label: 'Novembre', revenue: 2930, bookings: 21 }
   ];
 };

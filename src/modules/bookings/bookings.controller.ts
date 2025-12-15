@@ -6,20 +6,18 @@ import {
   Body,
   Param,
   UseGuards,
-  Request,
+  Req, // Utilisation de Req au lieu de Request (decorateur Nest)
   ForbiddenException,
-  BadRequestException,
 } from '@nestjs/common';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dtos/create-booking.dto';
-import { BookingStatus, Role } from '@prisma/client';
+import { BookingStatus, Role, User } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { UserRole } from '../auth/enums/user-role.enum';
+import { Request } from 'express'; // Import du type Request Express
 
-interface AuthenticatedUser {
-  sub: string;
-  userId?: string;
-  role: Role;
+// ✅ CORRECTION : Interface standardisée pour ce projet
+interface RequestWithUser extends Request {
+  user: User;
 }
 
 @Controller('bookings')
@@ -27,52 +25,42 @@ interface AuthenticatedUser {
 export class BookingsController {
   constructor(private readonly bookingsService: BookingsService) {}
 
-  private extractUser(req: { user: AuthenticatedUser }): AuthenticatedUser {
-    if (!req.user) {
-      throw new BadRequestException('User not authenticated');
-    }
-    const user: AuthenticatedUser = req.user;
-    if (!user.sub && !user.userId) {
-      throw new BadRequestException('User ID not found in token');
-    }
-    if (!user.role) {
-      throw new BadRequestException('User role not found in token');
-    }
-    return user;
-  }
-
-  private getUserId(user: AuthenticatedUser): string {
-    return user.sub || user.userId!;
-  }
-
   @Post()
-  async createBooking(@Request() req, @Body() dto: CreateBookingDto) {
-    const user = this.extractUser(req);
-    if (user.role !== 'CLIENT') {
+  async createBooking(
+    @Req() req: RequestWithUser, 
+    @Body() dto: CreateBookingDto
+  ) {
+    const user = req.user;
+
+    if (user.role !== Role.CLIENT) {
       throw new ForbiddenException('Only clients can create bookings');
     }
-    const userId = this.getUserId(user);
-    return this.bookingsService.createBooking(userId, dto);
+
+    // ✅ CORRECTION : Accès direct à user.id
+    return this.bookingsService.createBooking(user.id, dto);
   }
 
   @Get()
-  async getUserBookings(@Request() req) {
-    const user = this.extractUser(req);
+  async getUserBookings(@Req() req: RequestWithUser) {
+    const user = req.user;
+
+    // Pas besoin de vérifier si user existe, le Guard le fait déjà
     if (user.role !== Role.CLIENT && user.role !== Role.PRO) {
-      throw new ForbiddenException('Only clients and professionals can view their bookings');
+      throw new ForbiddenException(
+        'Only clients and professionals can view their bookings',
+      );
     }
-    const userId = this.getUserId(user);
-    return this.bookingsService.findUserBookings(userId, user.role as 'CLIENT' | 'PRO');
+
+    return this.bookingsService.findUserBookings(user.id, user.role);
   }
 
   @Patch(':id/status')
   async updateBookingStatus(
     @Param('id') id: string,
     @Body('status') status: BookingStatus,
-    @Request() req,
+    @Req() req: RequestWithUser,
   ) {
-    const user = this.extractUser(req);
-    const userId = this.getUserId(user);
-    return this.bookingsService.updateStatus(id, status, userId, user.role);
+    const user = req.user;
+    return this.bookingsService.updateStatus(id, status, user.id, user.role);
   }
 }

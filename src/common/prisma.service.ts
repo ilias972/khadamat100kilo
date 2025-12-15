@@ -1,5 +1,5 @@
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
-import { PrismaClient, BookingStatus } from '@prisma/client';
+import { Inject, Injectable, OnModuleInit, INestApplication } from '@nestjs/common';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { RedisCacheService } from './redis-cache.service';
 
 @Injectable()
@@ -15,7 +15,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     await this.$connect();
   }
 
-  async enableShutdownHooks(app: any) {
+  // ✅ CORRECTION : Typage de l'application Nest
+  async enableShutdownHooks(app: INestApplication) {
     process.on('beforeExit', async () => {
       await app.close();
     });
@@ -26,13 +27,14 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     const cacheKey = RedisCacheService.generateUserKey(userId);
     return this.cacheService.getOrSet(
       cacheKey,
-      () => this.user.findUnique({
-        where: { id: userId, deletedAt: null },
-        include: {
-          clientProfile: true,
-          proProfile: true,
-        },
-      }),
+      () =>
+        this.user.findUnique({
+          where: { id: userId, deletedAt: null },
+          include: {
+            clientProfile: true,
+            proProfile: true,
+          },
+        }),
       3600, // 1 hour TTL
     );
   }
@@ -41,10 +43,11 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     const cacheKey = RedisCacheService.generateLocationsKey(city);
     return this.cacheService.getOrSet(
       cacheKey,
-      () => this.city.findMany({
-        where: city ? { name: { contains: city } } : undefined,
-        orderBy: { name: 'asc' },
-      }),
+      () =>
+        this.city.findMany({
+          where: city ? { name: { contains: city } } : undefined,
+          orderBy: { name: 'asc' },
+        }),
       1800, // 30 minutes TTL
     );
   }
@@ -53,22 +56,23 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     const cacheKey = RedisCacheService.generateServicesKey(categoryId);
     return this.cacheService.getOrSet(
       cacheKey,
-      () => this.serviceCategory.findMany({
-        where: categoryId ? { id: categoryId } : undefined,
-        include: {
-          proServices: {
-            where: { isActive: true },
-            include: {
-              proProfile: {
-                include: {
-                  user: true,
+      () =>
+        this.serviceCategory.findMany({
+          where: categoryId ? { id: categoryId } : undefined,
+          include: {
+            proServices: {
+              where: { isActive: true },
+              include: {
+                proProfile: {
+                  include: {
+                    user: true,
+                  },
                 },
               },
             },
           },
-        },
-        orderBy: { name: 'asc' },
-      }),
+          orderBy: { name: 'asc' },
+        }),
       1800, // 30 minutes TTL
     );
   }
@@ -77,9 +81,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     const cacheKey = RedisCacheService.generateServiceCategoriesKey();
     return this.cacheService.getOrSet(
       cacheKey,
-      () => this.serviceCategory.findMany({
-        orderBy: { name: 'asc' },
-      }),
+      () =>
+        this.serviceCategory.findMany({
+          orderBy: { name: 'asc' },
+        }),
       3600, // 1 hour TTL
     );
   }
@@ -88,22 +93,20 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     const cacheKey = RedisCacheService.generateBookingsKey(userId, status);
     return this.cacheService.getOrSet(
       cacheKey,
-      () => this.booking.findMany({
-        where: {
-          OR: [
-            { clientId: userId },
-            { proId: userId },
-          ],
-          ...(status && { status: status as any }),
-        },
-        include: {
-          client: { include: { clientProfile: true } },
-          pro: { include: { proProfile: true } },
-          serviceCategory: true,
-          review: true,
-        },
-        orderBy: { createdAt: 'desc' },
-      }),
+      () =>
+        this.booking.findMany({
+          where: {
+            OR: [{ clientId: userId }, { proId: userId }],
+            ...(status && { status: status as any }),
+          },
+          include: {
+            client: { include: { clientProfile: true } },
+            pro: { include: { proProfile: true } },
+            serviceCategory: true,
+            review: true,
+          },
+          orderBy: { createdAt: 'desc' },
+        }),
       600, // 10 minutes TTL
     );
   }
@@ -112,21 +115,22 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     const cacheKey = RedisCacheService.generateReviewsKey(serviceId, proId);
     return this.cacheService.getOrSet(
       cacheKey,
-      () => this.review.findMany({
-        where: {
-          ...(serviceId && { serviceId }),
-          ...(proId && { proId }),
-        },
-        include: {
-          booking: {
-            include: {
-              serviceCategory: true,
-              client: { include: { clientProfile: true } },
+      () =>
+        this.review.findMany({
+          where: {
+            ...(serviceId && { serviceId }),
+            ...(proId && { proId }),
+          },
+          include: {
+            booking: {
+              include: {
+                serviceCategory: true,
+                client: { include: { clientProfile: true } },
+              },
             },
           },
-        },
-        orderBy: { createdAt: 'desc' },
-      }),
+          orderBy: { createdAt: 'desc' },
+        }),
       1800, // 30 minutes TTL
     );
   }
@@ -156,82 +160,79 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     await this.cacheService.invalidateReviewsCache(proId, serviceId);
   }
 
-  // Override Prisma methods to include cache invalidation
-  async createUser(data: any) {
-    const result = await this.user.create(data);
-    // Don't cache immediately, let it be cached on first read
+  // ✅ CORRECTION : Utilisation des types Prisma.XxxArgs au lieu de any
+
+  async createUser(args: Prisma.UserCreateArgs) {
+    const result = await this.user.create(args);
     return result;
   }
 
-  async updateUser(where: any, data: any) {
-    const result = await this.user.update({ where, data });
+  async updateUser(args: Prisma.UserUpdateArgs) {
+    const result = await this.user.update(args);
     // Invalidate cache for this user
-    if (where.id) {
-      await this.invalidateUserCache(where.id);
+    if (args.where.id) {
+      await this.invalidateUserCache(args.where.id);
     }
     return result;
   }
 
-  async deleteUser(where: any) {
-    const result = await this.user.delete(where);
+  async deleteUser(args: Prisma.UserDeleteArgs) {
+    const result = await this.user.delete(args);
     // Invalidate cache for this user
-    if (where.id) {
-      await this.invalidateUserCache(where.id);
+    if (args.where.id) {
+      await this.invalidateUserCache(args.where.id);
     }
     return result;
   }
 
-  async createLocation(data: any) {
-    const result = await this.city.create(data);
+  async createLocation(args: Prisma.CityCreateArgs) {
+    const result = await this.city.create(args);
     await this.invalidateLocationsCache();
     return result;
   }
 
-  async updateLocation(where: any, data: any) {
-    const result = await this.city.update({ where, data });
+  async updateLocation(args: Prisma.CityUpdateArgs) {
+    const result = await this.city.update(args);
     await this.invalidateLocationsCache();
     return result;
   }
 
-  async createServiceCategory(data: any) {
-    const result = await this.serviceCategory.create(data);
+  async createServiceCategory(args: Prisma.ServiceCategoryCreateArgs) {
+    const result = await this.serviceCategory.create(args);
     await this.invalidateServiceCategoriesCache();
     await this.invalidateServicesCache();
     return result;
   }
 
-  async updateServiceCategory(where: any, data: any) {
-    const result = await this.serviceCategory.update({ where, data });
+  async updateServiceCategory(args: Prisma.ServiceCategoryUpdateArgs) {
+    const result = await this.serviceCategory.update(args);
     await this.invalidateServiceCategoriesCache();
     await this.invalidateServicesCache();
     return result;
   }
 
-  async createBooking(data: any) {
-    const result = await this.booking.create(data);
+  async createBooking(args: Prisma.BookingCreateArgs) {
+    const result = await this.booking.create(args);
     // Invalidate bookings cache for both client and pro
-    await this.invalidateBookingsCache(data.data.clientId);
-    await this.invalidateBookingsCache(data.data.proId);
+    await this.invalidateBookingsCache(result.clientId);
+    await this.invalidateBookingsCache(result.proId);
     return result;
   }
 
-  async updateBooking(where: any, data: any) {
-    const result = await this.booking.update({ where, data });
-    // Invalidate bookings cache for both client and pro
-    const booking = await this.booking.findUnique({
-      where,
-      select: { clientId: true, proId: true },
-    });
-    if (booking) {
-      await this.invalidateBookingsCache(booking.clientId);
-      await this.invalidateBookingsCache(booking.proId);
-    }
+  async updateBooking(args: Prisma.BookingUpdateArgs) {
+    const result = await this.booking.update(args);
+    
+    // Pour invalider proprement, on utilise le résultat direct
+    // au lieu de refaire une requête findUnique inutile
+    await this.invalidateBookingsCache(result.clientId);
+    await this.invalidateBookingsCache(result.proId);
+    
     return result;
   }
 
-  async createReview(data: any) {
-    const result = await this.review.create(data);
-    await this.invalidateReviewsCache(data.data.proId);
+  async createReview(args: Prisma.ReviewCreateArgs) {
+    const result = await this.review.create(args);
+    await this.invalidateReviewsCache(result.proId);
     return result;
   }
 }

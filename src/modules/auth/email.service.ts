@@ -18,6 +18,15 @@ export class EmailService {
   }
 
   async sendEmailVerification(email: string, token: string) {
+    // PATCH: Bypass email sending in development to prevent timeout
+    if (process.env.NODE_ENV === 'development' || !process.env.EMAIL_USER) {
+      console.log('================================================');
+      console.log('📧 MOCK EMAIL SERVICE (Dev Mode)');
+      console.log(`To: ${email}`);
+      console.log(`Context/Token:`, token);
+      console.log('================================================');
+      return true;
+    }
     const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
     await this.transporter.sendMail({
@@ -35,6 +44,15 @@ export class EmailService {
   }
 
   async sendPasswordReset(email: string, token: string) {
+    // PATCH: Bypass email sending in development to prevent timeout
+    if (process.env.NODE_ENV === 'development' || !process.env.EMAIL_USER) {
+      console.log('================================================');
+      console.log('📧 MOCK EMAIL SERVICE (Dev Mode)');
+      console.log(`To: ${email}`);
+      console.log(`Context/Token:`, token);
+      console.log('================================================');
+      return true;
+    }
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
     await this.transporter.sendMail({

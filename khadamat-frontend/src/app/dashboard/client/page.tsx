@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Toast } from '@/components/ui/toast';
 import { useAuth } from '@/lib/auth-context';
 import { mockClientBookings, mockClientFavorites } from '@/lib/mocks/services-mocks';
-import apiClientInstance from '@/lib/api-client';
+// ✅ CORRECTION 1 : Import du bon service
+import { bookingService } from '@/services/booking.service';
 import { Calendar, Clock, Star, TrendingUp, MessageSquare, Settings, User } from 'lucide-react';
 
 export default function ClientDashboard() {
@@ -21,7 +22,8 @@ export default function ClientDashboard() {
     useEffect(() => {
       const loadBookings = async () => {
         try {
-          const data = await apiClientInstance.getMyBookings();
+          // ✅ CORRECTION 2 : Appel via le service connecté au Backend 4000
+          const data = await bookingService.getMyBookings();
           setBookings(data);
           setError(null);
         } catch (err) {
@@ -250,10 +252,13 @@ export default function ClientDashboard() {
                   </Button>
                 </Link>
 
-                <Button className="w-full justify-start" variant="outline">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Paramètres
-                </Button>
+                {/* ✅ CORRECTION 3 : Ajout du Link pour les paramètres */}
+                <Link href="/settings" className="block">
+                  <Button className="w-full justify-start" variant="outline">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Paramètres
+                  </Button>
+                </Link>
               </div>
             </Card>
           </motion.div>

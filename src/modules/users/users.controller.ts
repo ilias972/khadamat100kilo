@@ -1,32 +1,29 @@
-import { Controller, Get, Put, Patch, Body, UseGuards, Request } from '@nestjs/common';
-import { CacheTTL, CacheKey } from '@nestjs/cache-manager';
+import { Controller, Get, Patch, Body, UseGuards, Req, Logger } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { UpdateUserProfileDto } from './dtos/update-user-profile.dto';
 
-@Controller('user')
+@Controller('user') // ⚠️ On reste sur le SINGULIER
 @UseGuards(JwtAuthGuard)
 export class UsersController {
+  private readonly logger = new Logger(UsersController.name);
+
   constructor(private readonly usersService: UsersService) {}
 
   @Get('profile')
-  @CacheTTL(300) // 5 minutes
-  async getProfile(@Request() req) {
+  async getProfile(@Req() req) {
     return this.usersService.findProfile(req.user.id);
   }
 
-  @Put('profile')
-  async updateProfile(@Request() req, @Body() data: UpdateUserProfileDto) {
-    return this.usersService.updateProfile(req.user.id, data);
-  }
+  @Patch('profile')
+  async updateProfile(@Req() req, @Body() data: any) {
+    // 🚨 LOG 1 : Est-ce que le Controller reçoit la demande ?
+    console.log('\n---------------------------------------------------');
+    console.log('🚨 [CONTROLLER] Requête reçue !');
+    console.log('🚨 [CONTROLLER] User ID:', req.user.id);
+    console.log('🚨 [CONTROLLER] Role:', req.user.role);
+    console.log('🚨 [CONTROLLER] Data body:', data);
+    console.log('---------------------------------------------------\n');
 
-  @Patch('me')
-  async updateMe(@Request() req, @Body() data: { firstName?: string; lastName?: string; bio?: string; phone?: string }) {
-    return this.usersService.updateProfile(req.user.id, data);
-  }
-
-  @Patch('change-password')
-  async changePassword(@Request() req, @Body() data: { currentPassword: string; newPassword: string }) {
-    return this.usersService.changePassword(req.user.id, data.currentPassword, data.newPassword);
+    return this.usersService.updateProfileSimple(req.user.id, req.user.role, data);
   }
 }

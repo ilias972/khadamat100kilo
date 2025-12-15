@@ -24,7 +24,7 @@ export class HealthService {
   ) {}
 
   async getHealthStatus(): Promise<HealthStatus> {
-    const startTime = Date.now();
+    const _startTime = Date.now();
     let dbStatus: HealthStatus['database'];
 
     try {
@@ -152,8 +152,7 @@ export class HealthService {
       return {
         status: 'error',
         timestamp: new Date().toISOString(),
-        error:
-          error instanceof Error ? error.message : 'Unknown system error',
+        error: error instanceof Error ? error.message : 'Unknown system error',
       };
     }
   }

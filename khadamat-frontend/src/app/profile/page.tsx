@@ -9,19 +9,22 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth, useUserRole } from '@/lib/auth-context';
 import { Header } from '@/components/layout/header';
 import { User, Mail, Phone, MapPin, Camera, Save, Settings } from 'lucide-react';
+// 👇 AJOUT CRUCIAL : Import de votre client API configuré
+import apiClient from '@/lib/api-client';
 
 export default function ProfilePage() {
   const { user } = useAuth();
-  const roles = useUserRole();
+  const roles = useUserRole(); // Note: variable déclarée mais pas utilisée directement dans le JSX fourni, je la laisse.
   const [isEditing, setIsEditing] = useState(false);
+  
   const [formData, setFormData] = useState({
     firstName: user?.clientProfile?.firstName || user?.proProfile?.firstName || '',
     lastName: user?.clientProfile?.lastName || user?.proProfile?.lastName || '',
     email: user?.email || '',
-    phone: '', // Will be populated from user data if available
+    phone: '', // Idéalement, récupérez cela du user context si disponible
     address: user?.clientProfile?.address || '',
     bio: user?.proProfile?.bio || '',
-    experience: '', // Will be converted to string
+    experience: '',
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -31,10 +34,33 @@ export default function ProfilePage() {
     }));
   };
 
-  const handleSave = () => {
-    // TODO: Implement save functionality
-    console.log('Saving profile:', formData);
-    setIsEditing(false);
+  // 👇 FONCTION CORRIGÉE : Connectée au Backend via apiClient
+  const handleSave = async () => {
+    try {
+      console.log('Envoi des données au backend...', formData);
+
+      // Préparation du payload selon ce que votre api-client.ts attend
+      // Note : Assurez-vous que votre backend gère aussi l'adresse et la bio si vous voulez les sauvegarder
+      const payload = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        // Ajoutez ici address, bio, etc. si vous avez mis à jour api-client.ts pour les accepter
+      };
+
+      await apiClient.updateProfile(payload);
+
+      // Feedback utilisateur
+      alert("Profil mis à jour avec succès !"); 
+      setIsEditing(false);
+      
+      // Optionnel : Forcer le rechargement pour mettre à jour le header ou le contexte
+      // window.location.reload(); 
+
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde:', error);
+      alert("Erreur lors de la sauvegarde. Vérifiez que le backend tourne sur le port 4000.");
+    }
   };
 
   const handleCancel = () => {
@@ -43,10 +69,10 @@ export default function ProfilePage() {
       firstName: user?.clientProfile?.firstName || user?.proProfile?.firstName || '',
       lastName: user?.clientProfile?.lastName || user?.proProfile?.lastName || '',
       email: user?.email || '',
-      phone: '', // Reset to empty
+      phone: '',
       address: user?.clientProfile?.address || '',
       bio: user?.proProfile?.bio || '',
-      experience: '', // Reset to empty
+      experience: '',
     });
     setIsEditing(false);
   };
@@ -185,7 +211,7 @@ export default function ProfilePage() {
                         type="email"
                         value={formData.email}
                         onChange={(e) => handleInputChange('email', e.target.value)}
-                        disabled={!isEditing}
+                        disabled={!isEditing} // Email est souvent non-modifiable
                         className={`pl-10 ${!isEditing ? 'bg-gray-50' : ''}`}
                       />
                     </div>

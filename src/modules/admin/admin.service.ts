@@ -162,7 +162,10 @@ export class AdminService {
 
   // Booking management
   async getAllBookings(page: number = 1, limit: number = 20, status?: string) {
-    if (status && !BOOKING_STATUS_VALUES.includes(status as BookingStatusEnum)) {
+    if (
+      status &&
+      !BOOKING_STATUS_VALUES.includes(status as BookingStatusEnum)
+    ) {
       throw new BadRequestException('Invalid status value');
     }
 

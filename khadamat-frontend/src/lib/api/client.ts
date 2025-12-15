@@ -1,73 +1,39 @@
-import axios, { AxiosInstance, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios from 'axios';
 
-// Configuration
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+// ⚠️ FORCE BRUTE : On met l'adresse complète.
+// Si tu vois encore une erreur vers port 3000 après ça, c'est que ce fichier n'est pas utilisé.
+const BASE_URL = 'http://localhost:4000/api';
 
-// Create axios instance with base configuration
-const apiClient: AxiosInstance = axios.create({
-  baseURL: API_URL,
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+export const apiClient = axios.create({
+  baseURL: BASE_URL,
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 });
 
-// Request interceptor to inject JWT token
-apiClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
+apiClient.interceptors.request.use((config) => {
+  // On force l'URL de base si jamais Axios l'a perdue
+  if (!config.baseURL) {
+    config.baseURL = BASE_URL;
+  }
+  
+  if (typeof window !== 'undefined') {
     const token = localStorage.getItem('khadamat_access_token');
-    console.log('🔑 Token injecté:', token ? 'OUI' : 'NON');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    console.log('👉 API Request:', (config.method || 'GET').toUpperCase(), config.url, 'Token:', config.headers.Authorization || 'No token');
-    return config;
-  },
-  (error: AxiosError) => {
-    return Promise.reject(error);
+    if (token) config.headers.Authorization = `Bearer ${token}`;
   }
-);
+  
+  // 👀 LOG CRITIQUE : Si tu vois 3000 ici, c'est impossible.
+  console.log(`📡 [CLIENT] Vers : ${config.baseURL}${config.url}`);
+  return config;
+});
 
-// Response interceptor for error handling
 apiClient.interceptors.response.use(
-  (response: AxiosResponse) => {
-    console.log('✅ API Response:', response.status, response.data);
-    return response;
-  },
-  (error: AxiosError) => {
-    console.log('❌ API Error:', error.response?.status, error.message, error.response?.data);
-    if (error.response) {
-      const { status, data } = error.response;
-
-      switch (status) {
-        case 401:
-          // Unauthorized - token expired or invalid
-          localStorage.removeItem('khadamat_access_token');
-          // Redirect to login or dispatch logout action
-          console.error('Unauthorized access - token removed');
-          break;
-        case 403:
-          console.error('Forbidden access');
-          break;
-        case 404:
-          console.error('Resource not found');
-          break;
-        case 500:
-          console.error('Internal server error');
-          break;
-        default:
-          console.error(`API Error: ${status}`, data);
-      }
-    } else if (error.request) {
-      // Network error
-      console.error('Network error - please check your connection');
-    } else {
-      console.error('Request error:', error.message);
-    }
-
+  (res) => res,
+  (error) => {
+    // Debug amélioré
+    const target = error.config ? `${error.config.baseURL}${error.config.url}` : 'Inconnu';
+    console.error(`❌ [CLIENT] ECHEC vers ${target} :`, error.message);
     return Promise.reject(error);
   }
 );
 
-// Export the raw axios instance
 export default apiClient;
