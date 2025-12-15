@@ -1,6 +1,9 @@
 import "dotenv/config";
 import { defineConfig, env } from "prisma/config";
 
+// Explicitly load DATABASE_URL from environment
+const databaseUrl = process.env.DATABASE_URL || env("DATABASE_URL");
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
@@ -8,6 +11,6 @@ export default defineConfig({
   },
   engine: "classic",
   datasource: {
-    url: env("DATABASE_URL"),
+    url: databaseUrl,
   },
 });

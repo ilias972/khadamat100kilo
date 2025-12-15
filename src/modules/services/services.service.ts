@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma.service';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ServicesService {
@@ -17,16 +18,22 @@ export class ServicesService {
     });
   }
 
-  async findAll(search?: string, categoryId?: string, page: number = 1, limit: number = 10) {
+  async findAll(
+    search?: string,
+    categoryId?: string,
+    page: number = 1,
+    limit: number = 10,
+  ) {
     const skip = (page - 1) * limit;
 
-    const where: any = {
+    const where: Prisma.ProServiceWhereInput = {
       isActive: true,
     };
 
     if (search) {
+      // ✅ CORRECTION : On a retiré 'name' qui n'existe pas dans le schema Prisma pour ProService
+      // On cherche uniquement dans la description, ou on pourrait ajouter 'title' si ça existe.
       where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } },
       ];
     }

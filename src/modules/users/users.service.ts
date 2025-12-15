@@ -1,176 +1,87 @@
-import {
-  Injectable,
-  NotFoundException,
-  ForbiddenException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma.service';
-import { BusinessLoggerService } from '../../common/logger/business-logger.service';
-import { Role } from '@prisma/client';
-import { Prisma } from '@prisma/client';
-import { UpdateUserProfileDto } from './dtos/update-user-profile.dto';
-import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-  constructor(
-    private prisma: PrismaService,
-    private businessLogger: BusinessLoggerService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   async findProfile(userId: string) {
-    const user = await this.prisma.findUserByIdCached(userId);
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { clientProfile: true, proProfile: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
     return user;
   }
 
-  async updateProfile(userId: string, data: UpdateUserProfileDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        clientProfile: true,
-        proProfile: true,
-      },
-    });
+  async updateProfileSimple(userId: string, role: string, data: any) {
+    console.log(`🚨 [SERVICE] Début update pour ${userId} (Role: ${role})`);
 
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    // Handle profile updates based on user role
-    const updateData: Prisma.UserUpdateInput = {};
-
-    // Handle direct profile fields
-    const profileUpdate: Prisma.ClientProfileUpdateInput | Prisma.ProProfileUpdateInput = {};
-    if (data.firstName !== undefined) profileUpdate.firstName = data.firstName;
-    if (data.lastName !== undefined) profileUpdate.lastName = data.lastName;
-    if (data.bio !== undefined && user.role === Role.PRO) (profileUpdate as Prisma.ProProfileUpdateInput).bio = data.bio;
-
-    if (Object.keys(profileUpdate).length > 0) {
-      if (user.role === Role.CLIENT) {
-        updateData.clientProfile = { update: profileUpdate };
-      } else if (user.role === Role.PRO) {
-        updateData.proProfile = { update: profileUpdate };
+    // 1. Update USER (Téléphone)
+    if (data.phone) {
+      try {
+        await this.prisma.user.update({
+          where: { id: userId },
+          data: { phone: data.phone },
+        });
+        console.log('🚨 [SERVICE] ✅ Téléphone mis à jour dans table User');
+      } catch (e) {
+        console.error('🚨 [SERVICE] ❌ Erreur update téléphone:', e);
       }
     }
 
-    if (user.role === Role.CLIENT && data.clientProfile) {
-      updateData.clientProfile = { update: data.clientProfile };
+    // 2. Préparation des données Profil
+    const profileData: any = {};
+    if (data.firstName) profileData.firstName = data.firstName;
+    if (data.lastName) profileData.lastName = data.lastName;
+
+    console.log('🚨 [SERVICE] Données à mettre à jour dans le profil:', profileData);
+
+    // 3. Update PROFIL (Client ou Pro)
+    if (Object.keys(profileData).length > 0) {
+      if (role === 'CLIENT') {
+        // Vérification d'existence (Conseil de Claude)
+        const exists = await this.prisma.clientProfile.findUnique({ where: { userId } });
+        
+        if (!exists) {
+            console.log('🚨 [SERVICE] ⚠️ ATTENTION: Le ClientProfile n\'existe pas ! Création automatique...');
+            // Auto-repair : On le crée s'il manque
+            await this.prisma.clientProfile.create({
+                data: {
+                    userId,
+                    firstName: data.firstName || 'Inconnu',
+                    lastName: data.lastName || 'Inconnu',
+                }
+            });
+             console.log('🚨 [SERVICE] ✅ ClientProfile créé avec succès');
+        } else {
+            await this.prisma.clientProfile.update({
+                where: { userId },
+                data: profileData
+            });
+            console.log('🚨 [SERVICE] ✅ ClientProfile mis à jour');
+        }
+      } 
+      else if (role === 'PRO') {
+         // Même logique pour le Pro
+         const exists = await this.prisma.proProfile.findUnique({ where: { userId } });
+         if (!exists) {
+            console.log('🚨 [SERVICE] ⚠️ Le ProProfile n\'existe pas !');
+         } else {
+            await this.prisma.proProfile.update({
+                where: { userId },
+                data: profileData
+            });
+            console.log('🚨 [SERVICE] ✅ ProProfile mis à jour');
+         }
+      }
     }
 
-    if (user.role === Role.PRO && data.proProfile) {
-      updateData.proProfile = { update: data.proProfile };
-    }
-
-    // Update user-level fields if provided
-    if (data.phone) updateData.phone = data.phone;
-
-    return this.prisma.user.update({
+    console.log('🚨 [SERVICE] Fin de la procédure. Renvoi des données fraîches.');
+    
+    return this.prisma.user.findUnique({
       where: { id: userId },
-      data: updateData,
-      include: {
-        clientProfile: true,
-        proProfile: true,
-      },
+      include: { clientProfile: true, proProfile: true },
     });
-  }
-
-  async softDeleteUser(userId: string, adminId: string) {
-    // Verify user exists and is not already deleted
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    if (user.deletedAt) {
-      throw new ForbiddenException('User is already deleted');
-    }
-
-    // Soft delete the user
-    const deletedUser = await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        status: 'deleted',
-        deletedAt: new Date(),
-        updatedAt: new Date(),
-      },
-    });
-
-    // Log the deletion
-    this.businessLogger.logSecurityEvent(
-      'USER_SOFT_DELETED',
-      userId,
-      undefined,
-      undefined,
-      { deletedBy: adminId, userEmail: user.email },
-    );
-
-    return deletedUser;
-  }
-
-  async restoreUser(userId: string, adminId: string) {
-    // Verify user exists and is deleted
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    if (!user.deletedAt) {
-      throw new ForbiddenException('User is not deleted');
-    }
-
-    // Restore the user
-    const restoredUser = await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        status: 'active',
-        deletedAt: null,
-        updatedAt: new Date(),
-      },
-    });
-
-    // Log the restoration
-    this.businessLogger.logSecurityEvent(
-      'USER_RESTORED',
-      userId,
-      undefined,
-      undefined,
-      { restoredBy: adminId, userEmail: user.email },
-    );
-
-    return restoredUser;
-  }
-
-  async changePassword(userId: string, currentPassword: string, newPassword: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    if (!(await bcrypt.compare(currentPassword, user.passwordHash))) {
-      throw new BadRequestException('Current password is incorrect');
-    }
-
-    const newPasswordHash = await bcrypt.hash(newPassword, 10);
-
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { passwordHash: newPasswordHash },
-    });
-
-    return { message: 'Password changed successfully' };
   }
 }

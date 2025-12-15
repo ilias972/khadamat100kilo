@@ -1,0 +1,6 @@
+Plaintext
+
+# Enforce LF for all files
+* text=auto eol=lf
+Keep CRLF for Windows-specific scripts (if any remain)
+*.{cmd,[cC][mM][dD]} text eol=crlf *.{bat,[bB][aA][tT]} text eol=crlf

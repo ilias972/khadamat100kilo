@@ -1,19 +1,27 @@
-import { Controller, Get, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, UseGuards, Req } from '@nestjs/common';
 import { StatisticsService } from './statistics.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { Role } from '@prisma/client';
+import { Request } from 'express';
 
-@Controller('statistics')
-@UseGuards(JwtAuthGuard)
+@Controller('stats')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class StatisticsController {
   constructor(private readonly statisticsService: StatisticsService) {}
 
   @Get('client')
-  async getClientStatistics(@Request() req) {
-    return this.statisticsService.getClientStatistics(req.user.sub);
+  @Roles(Role.CLIENT)
+  async getClientStatistics(@Req() req: Request) {
+    // @ts-ignore: user exists on req
+    return this.statisticsService.getClientStats(req.user.id);
   }
 
   @Get('pro')
-  async getProStatistics(@Request() req) {
-    return this.statisticsService.getProStatistics(req.user.sub);
+  @Roles(Role.PRO)
+  async getProStatistics(@Req() req: Request) {
+    // @ts-ignore: user exists on req
+    return this.statisticsService.getProStats(req.user.id);
   }
 }

@@ -42,7 +42,12 @@ import { DatabaseModule } from '../../common/database.module';
     ),
     DatabaseModule,
   ],
-  providers: [EmailProcessor, NotificationProcessor, DeadLetterProcessor, QueueService],
+  providers: [
+    EmailProcessor,
+    NotificationProcessor,
+    DeadLetterProcessor,
+    QueueService,
+  ],
   exports: [BullModule, QueueService],
 })
 export class QueuesModule {}

@@ -331,7 +331,7 @@ interface SupportArticleCardProps {
   className?: string;
 }
 
-export function SupportArticleCard({ article, onClick, className }: SupportArticleCardProps) {
+export const SupportArticleCard = React.memo(function SupportArticleCard({ article, onClick, className }: SupportArticleCardProps) {
   return (
     <div
       className={cn(

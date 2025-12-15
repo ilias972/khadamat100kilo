@@ -13,9 +13,22 @@ import { Role, BookingStatus, Prisma } from '@prisma/client';
 
 type ProWithServices = Prisma.ProProfileGetPayload<{
   include: {
-    user: { select: { id: true; email: false; phone: false; role: true; status: true; lastLogin: true; createdAt: true } };
+    user: {
+      select: {
+        id: true;
+        email: false;
+        phone: false;
+        role: true;
+        status: true;
+        lastLogin: true;
+        createdAt: true;
+      };
+    };
     city: true;
-    proServices: { where: { isActive: true }; include: { serviceCategory: true; city: true } };
+    proServices: {
+      where: { isActive: true };
+      include: { serviceCategory: true; city: true };
+    };
   };
 }>;
 
@@ -224,7 +237,9 @@ export class ProService {
   }
 
   // Public pro discovery methods
-  async getPros(dto: GetProsFilterDto): Promise<PaginatedResponse<ProWithServices>> {
+  async getPros(
+    dto: GetProsFilterDto,
+  ): Promise<PaginatedResponse<ProWithServices>> {
     const page = Number(dto.page) || 1;
     const limit = Number(dto.limit) || 12;
     const skip = (page - 1) * limit;

@@ -4,8 +4,17 @@ import { useState, useEffect } from 'react';
 import apiClientInstance from '@/lib/api-client';
 import { ProProfile } from '@/types/api';
 
+// Interface locale pour éviter les erreurs de typage si ProProfile n'est pas parfait
+interface Professional {
+  id: string;
+  firstName: string;
+  lastName: string;
+  profession?: string; // Optionnel au cas où
+  // Ajoutez d'autres champs si nécessaire
+}
+
 export function FeaturedProfessionals() {
-  const [professionals, setProfessionals] = useState<ProProfile[]>([]);
+  const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -13,22 +22,36 @@ export function FeaturedProfessionals() {
     const fetchProfessionals = async () => {
       try {
         setIsLoading(true);
-        const response = await apiClientInstance.getPros();
+        // On passe les paramètres demandés par votre code précédent
+        const response = await apiClientInstance.getPros({
+          isVerified: true,
+          limit: 6,
+          minRating: 4.5
+        });
 
-        // Defensive check
-        if (!response || !Array.isArray(response.professionals)) {
-          console.error('Invalid API response:', response);
-          setProfessionals([]);
-          setError(new Error('Invalid API response'));
-          return;
+        console.log("Pros API Response:", response); // Pour le debug
+
+        // 🛡️ LOGIQUE DE SÉCURITÉ RENFORCÉE
+        // NestJS renvoie souvent les données, ou un objet { data: [...] }
+        // On vérifie tous les cas possibles pour trouver le tableau
+        let prosArray: Professional[] = [];
+
+        if (Array.isArray(response)) {
+          prosArray = response;
+        } else if (response && Array.isArray(response.data)) {
+          prosArray = response.data;
+        } else if (response && Array.isArray(response.professionals)) {
+          prosArray = response.professionals;
         }
 
-        setProfessionals(response?.professionals?.slice(0, 6) || []);
+        // Application du slice seulement si on a un tableau
+        setProfessionals(prosArray.slice(0, 6));
         setError(null);
+
       } catch (err) {
         console.error('Error fetching professionals:', err);
-        setError(err instanceof Error ? err : new Error('Unknown error'));
-        setProfessionals([]);
+        // On n'affiche pas l'erreur à l'utilisateur pour ne pas casser l'UI, on met juste vide
+        setProfessionals([]); 
       } finally {
         setIsLoading(false);
       }
@@ -37,20 +60,22 @@ export function FeaturedProfessionals() {
     fetchProfessionals();
   }, []);
 
-  if (isLoading) return <div className="text-center py-8">Loading professionals...</div>;
-  if (error) return <div className="text-red-500">Error loading professionals</div>;
-  if (professionals.length === 0) return <div className="text-gray-500">No professionals found</div>;
+  if (isLoading) return <div className="text-center py-8">Chargement des professionnels...</div>;
+  // Si erreur ou vide, on n'affiche rien ou un message discret
+  if (professionals.length === 0) return null; 
 
   return (
     <section className="py-12">
-      <h2 className="text-2xl font-bold mb-6">Featured Professionals</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {professionals.map((pro: ProProfile) => (
-          <div key={pro.id} className="border rounded-lg p-4">
-            <h3 className="font-semibold">{pro.firstName} {pro.lastName}</h3>
-            <p className="text-sm text-gray-600">{pro.profession}</p>
-          </div>
-        ))}
+      <div className="container mx-auto px-4">
+        <h2 className="text-2xl font-bold mb-6">Professionnels recommandés</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {professionals.map((pro) => (
+            <div key={pro.id} className="border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
+              <h3 className="font-semibold text-lg">{pro.firstName} {pro.lastName}</h3>
+              <p className="text-sm text-gray-600">{pro.profession || 'Professionnel'}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );

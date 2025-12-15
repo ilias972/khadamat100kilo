@@ -1,39 +1,33 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { Request } from 'express';
+import { PassportStrategy } from '@nestjs/passport';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private prisma: PrismaService) {
     super({
-      jwtFromRequest: ExtractJwt.fromExtractors([
-        (request: Request) => {
-          // Try to get token from cookie first
-          const token = request.cookies?.access_token;
-          if (token) {
-            return token;
-          }
-          // Fallback to Authorization header for backward compatibility
-          return ExtractJwt.fromAuthHeaderAsBearerToken()(request);
-        },
-      ]),
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET,
+      secretOrKey: 'MA_SUPER_CLE_SECRETE_123', // ⚠️ Doit correspondre à celle de auth.module.ts
     });
   }
 
   async validate(payload: any) {
+    // On vérifie que l'utilisateur existe toujours
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
-      select: { id: true, email: true, role: true },
+      include: {
+        clientProfile: true, // On charge les profils pour le controller
+        proProfile: true,
+      },
     });
 
     if (!user) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Utilisateur introuvable');
     }
 
-    return { userId: user.id, email: user.email, role: user.role };
+    // Ce que tu retournes ici est injecté dans req.user
+    return user;
   }
 }

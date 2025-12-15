@@ -1,5 +1,11 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { register, collectDefaultMetrics, Counter, Histogram, Gauge } from 'prom-client';
+import {
+  register,
+  collectDefaultMetrics,
+  Counter,
+  Histogram,
+  Gauge,
+} from 'prom-client';
 
 @Injectable()
 export class MetricsService implements OnModuleInit {
@@ -80,7 +86,11 @@ export class MetricsService implements OnModuleInit {
 
   // HTTP metrics methods
   incrementHttpRequests(method: string, route: string, statusCode: number) {
-    this.httpRequestTotal.inc({ method, route, status_code: statusCode.toString() });
+    this.httpRequestTotal.inc({
+      method,
+      route,
+      status_code: statusCode.toString(),
+    });
   }
 
   recordHttpRequestDuration(method: string, route: string, duration: number) {

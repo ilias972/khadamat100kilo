@@ -1,25 +1,23 @@
 import { Module } from '@nestjs/common';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
+import { PrismaService } from '../../common/prisma.service';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
-import { JwtStrategy } from './jwt.strategy';
-import { EmailService } from './email.service';
-import { PrismaService } from '../../common/prisma.service';
-import { LoggerModule } from '../../common/logger/logger.module';
-import { BusinessLoggerService } from '../../common/logger/business-logger.service';
+// 👇 C'est cette ligne qui manquait !
+import { JwtStrategy } from './jwt.strategy'; 
 
 @Module({
   imports: [
-    LoggerModule,
-    PassportModule,
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
-      secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: '15m' },
+      global: true,
+      secret: 'MA_SUPER_CLE_SECRETE_123', // Doit correspondre à celle dans jwt.strategy.ts
+      signOptions: { expiresIn: '7d' },
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, PrismaService, EmailService, BusinessLoggerService],
-  exports: [AuthService],
+  providers: [AuthService, JwtStrategy, PrismaService], // ✅ Maintenant il le connait
+  exports: [AuthService, JwtModule, PassportModule],
 })
 export class AuthModule {}

@@ -2,9 +2,10 @@ import axios from 'axios';
 import apiClientInstance from './api-client';
 
 // Configuration de base
-const BASE_URL = 'http://localhost:3000/api';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+export const API_URL = `${BASE_URL}/api`;
 
-console.log('API Target:', BASE_URL);
+console.log('API Target:', API_URL);
 
 // ============================================
 // MÉTHODES API PUBLIQUES (Homepage)
@@ -182,8 +183,27 @@ const api = {
       };
     }
   },
-  getServicesByCity: async () => {
+  getCategoryById: async (categoryId: string) => {
     try {
+      if (typeof (apiClientInstance as any).getCategoryById === 'function') {
+        const response = await (apiClientInstance as any).getCategoryById(categoryId);
+        return response;
+      }
+      const categories = await apiClientInstance.getCategories();
+      return categories.find((c: any) => c.id === categoryId) || null;
+    } catch (error) {
+      console.error('Error fetching category by id:', error);
+      return null;
+    }
+  },
+  getServicesByCity: async (cityId?: string) => {
+    try {
+      // If the client supports fetching services by city, forward the cityId
+      if (typeof (apiClientInstance as any).getServicesByCity === 'function') {
+        const response = await (apiClientInstance as any).getServicesByCity(cityId);
+        return response;
+      }
+      // Fallback: return categories as services
       const response = await apiClientInstance.getCategories();
       return response;
     } catch (error) {

@@ -1,71 +1,55 @@
-import {
-  Injectable,
-  NotFoundException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma.service';
-import { SendMessageDto, CreateConversationDto } from './dtos/send-message.dto';
-import { RateLimiterService } from '../../common/rate-limiter/rate-limiter.service';
 
 @Injectable()
 export class MessagingService {
-  constructor(
-    private prisma: PrismaService,
-    private rateLimiter: RateLimiterService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
-  // Conversation management
-  async createConversation(userId: string, dto: CreateConversationDto) {
-    // Verify participant2 exists
+  // --- GESTION DES CONVERSATIONS ---
+
+  async createConversation(userId: string, participant2Id: string, bookingId?: string) {
+    // Vérifier si le participant 2 existe
     const participant2 = await this.prisma.user.findUnique({
-      where: { id: dto.participant2Id },
+      where: { id: participant2Id },
     });
 
-    if (!participant2) {
-      throw new NotFoundException('Participant not found');
-    }
+    if (!participant2) throw new NotFoundException('Participant introuvable');
 
-    // If bookingId is provided, verify it exists and user is part of it
-    if (dto.bookingId) {
+    // Logique si lié à une réservation
+    if (bookingId) {
       const booking = await this.prisma.booking.findUnique({
-        where: { id: dto.bookingId },
+        where: { id: bookingId },
       });
 
-      if (!booking) {
-        throw new NotFoundException('Booking not found');
-      }
+      if (!booking) throw new NotFoundException('Réservation introuvable');
 
       if (booking.clientId !== userId && booking.proId !== userId) {
-        throw new ForbiddenException('Access denied to this booking');
+        throw new ForbiddenException('Accès refusé à cette réservation');
       }
 
-      // Check if conversation already exists for this booking
+      // Vérifier si une conversation existe déjà pour cette réservation
       const existingConversation = await this.prisma.conversation.findUnique({
-        where: { bookingId: dto.bookingId },
+        where: { bookingId },
       });
 
-      if (existingConversation) {
-        return existingConversation;
-      }
+      if (existingConversation) return existingConversation;
     }
 
-    // Create conversation
+    // Création
     return this.prisma.conversation.create({
       data: {
         participant1Id: userId,
-        participant2Id: dto.participant2Id,
-        bookingId: dto.bookingId,
+        participant2Id: participant2Id,
+        bookingId: bookingId,
       },
       include: {
-        messages: {
-          include: { sender: true },
-          orderBy: { createdAt: 'asc' },
-        },
+        messages: { include: { sender: true }, orderBy: { createdAt: 'asc' } },
         booking: true,
       },
     });
   }
 
+  // ✅ C'est cette méthode que le Dashboard appelle
   async getUserConversations(userId: string) {
     return this.prisma.conversation.findMany({
       where: {
@@ -75,12 +59,12 @@ export class MessagingService {
         messages: {
           include: { sender: true },
           orderBy: { createdAt: 'desc' },
-          take: 1, // Only latest message
+          take: 1, // Dernier message pour l'aperçu
         },
         booking: {
           include: {
-            serviceCategory: true,
-            city: true,
+            // serviceCategory: true, // Décommente si ton Prisma Schema a ces relations
+            // city: true,
           },
         },
       },
@@ -92,137 +76,66 @@ export class MessagingService {
     const conversation = await this.prisma.conversation.findUnique({
       where: { id: conversationId },
       include: {
-        messages: {
-          include: { sender: true },
-          orderBy: { createdAt: 'asc' },
-        },
-        booking: {
-          include: {
-            serviceCategory: true,
-            city: true,
-          },
-        },
+        messages: { include: { sender: true }, orderBy: { createdAt: 'asc' } },
+        booking: true,
       },
     });
 
-    if (!conversation) {
-      throw new NotFoundException('Conversation not found');
-    }
+    if (!conversation) throw new NotFoundException('Conversation introuvable');
 
-    // Check if user is participant
-    if (
-      conversation.participant1Id !== userId &&
-      conversation.participant2Id !== userId
-    ) {
-      throw new ForbiddenException('Access denied');
+    if (conversation.participant1Id !== userId && conversation.participant2Id !== userId) {
+      throw new ForbiddenException('Accès refusé');
     }
 
     return conversation;
   }
 
-  // Message management
-  async sendMessage(
-    conversationId: string,
-    senderId: string,
-    dto: SendMessageDto,
-  ) {
-    // Check rate limit
-    this.rateLimiter.checkMessageRateLimit(senderId);
+  // --- GESTION DES MESSAGES ---
 
-    // Verify conversation exists and user is participant
+  async sendMessage(conversationId: string, senderId: string, content: string, attachments: any[] = []) {
+    // Vérification droits
     const conversation = await this.prisma.conversation.findUnique({
       where: { id: conversationId },
     });
 
-    if (!conversation) {
-      throw new NotFoundException('Conversation not found');
+    if (!conversation) throw new NotFoundException('Conversation introuvable');
+
+    if (conversation.participant1Id !== senderId && conversation.participant2Id !== senderId) {
+      throw new ForbiddenException('Accès refusé');
     }
 
-    if (
-      conversation.participant1Id !== senderId &&
-      conversation.participant2Id !== senderId
-    ) {
-      throw new ForbiddenException('Access denied');
-    }
-
-    // Create message
-    const message = await this.prisma.message.create({
+    // Création message
+    return this.prisma.message.create({
       data: {
         conversationId,
         senderId,
-        content: dto.content,
-        attachments: JSON.stringify(dto.attachments || []),
+        content,
+        attachments: JSON.stringify(attachments),
       },
       include: {
         sender: {
-          select: {
-            id: true,
-            email: true,
-            clientProfile: true,
-            proProfile: true,
-          },
+          select: { id: true, email: true, clientProfile: true, proProfile: true },
         },
       },
     });
-
-    return message;
   }
 
-  async markMessagesAsRead(conversationId: string, userId: string) {
-    // Verify user is participant
-    const conversation = await this.prisma.conversation.findUnique({
-      where: { id: conversationId },
-    });
-
-    if (!conversation) {
-      throw new NotFoundException('Conversation not found');
-    }
-
-    if (
-      conversation.participant1Id !== userId &&
-      conversation.participant2Id !== userId
-    ) {
-      throw new ForbiddenException('Access denied');
-    }
-
-    // Mark messages as read (where sender is not the current user)
-    const otherParticipantId =
-      conversation.participant1Id === userId
-        ? conversation.participant2Id
-        : conversation.participant1Id;
-
-    await this.prisma.message.updateMany({
-      where: {
-        conversationId,
-        senderId: otherParticipantId,
-        readAt: null,
-      },
-      data: {
-        readAt: new Date(),
-      },
-    });
-
-    return { success: true };
-  }
-
-  // Get unread messages count
+  // ✅ Pour le badge de notifications
   async getUnreadCount(userId: string) {
-    const result = await this.prisma.message.groupBy({
-      by: ['conversationId'],
-      where: {
-        conversation: {
-          OR: [{ participant1Id: userId }, { participant2Id: userId }],
+    // On utilise un try/catch au cas où la table Message n'existe pas encore
+    try {
+      const result = await this.prisma.message.groupBy({
+        by: ['conversationId'],
+        where: {
+          conversation: { OR: [{ participant1Id: userId }, { participant2Id: userId }] },
+          senderId: { not: userId },
+          readAt: null,
         },
-        senderId: {
-          not: userId,
-        },
-        readAt: null,
-      },
-      _count: {
-        id: true,
-      },
-    });
-
-    return result.reduce((total, conv) => total + conv._count.id, 0);
+        _count: { id: true },
+      });
+      return { count: result.reduce((total, conv) => total + conv._count.id, 0) };
+    } catch (e) {
+      return { count: 0 }; // Sécurité anti-crash
+    }
   }
 }

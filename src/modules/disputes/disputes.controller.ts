@@ -6,7 +6,7 @@ import {
   Body,
   Param,
   UseGuards,
-  Request,
+  Req,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
@@ -16,7 +16,13 @@ import { ResolveDisputeDto } from './dtos/resolve-dispute.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { Role } from '@prisma/client';
+import { Role, User } from '@prisma/client';
+import { Request } from 'express';
+
+// ✅ CORRECTION : Interface standardisée
+interface RequestWithUser extends Request {
+  user: User;
+}
 
 @Controller('disputes')
 @UseGuards(JwtAuthGuard)
@@ -25,25 +31,31 @@ export class DisputesController {
   constructor(private readonly disputesService: DisputesService) {}
 
   @Post()
-  async createDispute(@Request() req, @Body() dto: CreateDisputeDto) {
+  async createDispute(
+    @Req() req: RequestWithUser, 
+    @Body() dto: CreateDisputeDto
+  ) {
     return this.disputesService.createDispute(
-      req.user.sub,
-      req.user.roles[0],
+      req.user.id,
+      req.user.role, // ✅ CORRECTION : role est singulier dans ton Prisma schema
       dto,
     );
   }
 
   @Get()
-  async getUserDisputes(@Request() req) {
-    return this.disputesService.getUserDisputes(req.user.sub);
+  async getUserDisputes(@Req() req: RequestWithUser) {
+    return this.disputesService.getUserDisputes(req.user.id);
   }
 
   @Get(':id')
-  async getDispute(@Param('id') id: string, @Request() req) {
+  async getDispute(
+    @Param('id') id: string, 
+    @Req() req: RequestWithUser
+  ) {
     return this.disputesService.getDisputeById(
       id,
-      req.user.sub,
-      req.user.roles[0],
+      req.user.id,
+      req.user.role, // ✅ CORRECTION : role singulier
     );
   }
 
@@ -52,9 +64,9 @@ export class DisputesController {
   @Roles(Role.ADMIN)
   async resolveDispute(
     @Param('id') id: string,
-    @Request() req,
+    @Req() req: RequestWithUser,
     @Body() dto: ResolveDisputeDto,
   ) {
-    return this.disputesService.resolveDispute(id, req.user.sub, dto);
+    return this.disputesService.resolveDispute(id, req.user.id, dto);
   }
 }

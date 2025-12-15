@@ -7,7 +7,7 @@ import {
   Body,
   Param,
   UseGuards,
-  Request,
+  Req,
   Query,
 } from '@nestjs/common';
 import { ProService } from './pro.service';
@@ -18,7 +18,13 @@ import { GetProsFilterDto } from './dtos/get-pros-filter.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { Role } from '@prisma/client';
+import { Role, User } from '@prisma/client';
+import { Request } from 'express';
+
+// ✅ CORRECTION : Interface pour typer la requête
+interface RequestWithUser extends Request {
+  user: User;
+}
 
 @Controller('pro')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -28,56 +34,59 @@ export class ProController {
 
   // Profile endpoints
   @Get('profile')
-  async getProfile(@Request() req) {
-    const userId = req.user.sub || req.user.userId || req.user.id;
-    return this.proService.getProProfile(userId);
+  async getProfile(@Req() req: RequestWithUser) {
+    // ✅ CORRECTION : Utilisation directe de .id (le seul champ valide du User Prisma)
+    return this.proService.getProProfile(req.user.id);
   }
 
   @Put('profile')
-  async updateProfile(@Request() req, @Body() data: UpdateProProfileDto) {
-    const userId = req.user.sub || req.user.userId || req.user.id;
-    return this.proService.updateProProfile(userId, data);
+  async updateProfile(
+    @Req() req: RequestWithUser, 
+    @Body() data: UpdateProProfileDto
+  ) {
+    return this.proService.updateProProfile(req.user.id, data);
   }
 
   // Services endpoints
   @Post('services')
-  async createService(@Request() req, @Body() dto: CreateProServiceDto) {
-    const userId = req.user.sub || req.user.userId || req.user.id;
-    return this.proService.createProService(userId, dto);
+  async createService(
+    @Req() req: RequestWithUser, 
+    @Body() dto: CreateProServiceDto
+  ) {
+    return this.proService.createProService(req.user.id, dto);
   }
 
   @Get('services')
-  async getServices(@Request() req) {
-    const userId = req.user.sub || req.user.userId || req.user.id;
-    return this.proService.getProServices(userId);
+  async getServices(@Req() req: RequestWithUser) {
+    return this.proService.getProServices(req.user.id);
   }
 
   @Put('services/:serviceId')
   async updateService(
-    @Request() req,
+    @Req() req: RequestWithUser,
     @Param('serviceId') serviceId: string,
     @Body() dto: UpdateProServiceDto,
   ) {
-    const userId = req.user.sub || req.user.userId || req.user.id;
-    return this.proService.updateProService(userId, serviceId, dto);
+    return this.proService.updateProService(req.user.id, serviceId, dto);
   }
 
   @Delete('services/:serviceId')
-  async deleteService(@Request() req, @Param('serviceId') serviceId: string) {
-    const userId = req.user.sub || req.user.userId || req.user.id;
-    return this.proService.deleteProService(userId, serviceId);
+  async deleteService(
+    @Req() req: RequestWithUser, 
+    @Param('serviceId') serviceId: string
+  ) {
+    return this.proService.deleteProService(req.user.id, serviceId);
   }
 
   // Stats endpoint
   @Get('stats')
-  async getStats(@Request() req) {
-    const userId = req.user.sub || req.user.userId || req.user.id;
-    return this.proService.getProStats(userId);
+  async getStats(@Req() req: RequestWithUser) {
+    return this.proService.getProStats(req.user.id);
   }
 
   // Public search endpoint
   @Get('search')
-  @UseGuards()
+  @UseGuards() // Empty guard overrides class-level guards -> Public endpoint
   async searchPros(@Query() dto: GetProsFilterDto) {
     return this.proService.getPros(dto);
   }

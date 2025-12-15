@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { MessagingController } from './messaging.controller';
-import { MessagingService } from './messaging.service';
+import { MessagingService } from './messaging.service'; // S'il existe, sinon retire-le
 import { PrismaService } from '../../common/prisma.service';
-import { RateLimiterService } from '../../common/rate-limiter/rate-limiter.service';
 
 @Module({
   controllers: [MessagingController],
-  providers: [MessagingService, PrismaService, RateLimiterService],
+  // Si tu n'as pas encore créé MessagingService, retire-le des providers pour l'instant
+  providers: [MessagingService, PrismaService], 
 })
 export class MessagingModule {}

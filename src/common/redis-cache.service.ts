@@ -14,7 +14,9 @@ export class RedisCacheService {
   async get<T>(key: string): Promise<T | undefined> {
     try {
       const result = await this.cacheManager.get<T>(key);
-      this.logger.debug(`Cache GET: ${key} - ${result !== undefined ? 'HIT' : 'MISS'}`);
+      this.logger.debug(
+        `Cache GET: ${key} - ${result !== undefined ? 'HIT' : 'MISS'}`,
+      );
       return result;
     } catch (error) {
       this.logger.error(`Cache GET failed for key ${key}: ${error.message}`);
@@ -87,7 +89,9 @@ export class RedisCacheService {
   }
 
   static generateBookingsKey(userId: string, status?: string): string {
-    return status ? `bookings:user:${userId}:${status}` : `bookings:user:${userId}`;
+    return status
+      ? `bookings:user:${userId}:${status}`
+      : `bookings:user:${userId}`;
   }
 
   static generateReviewsKey(serviceId?: string, proId?: string): string {
@@ -124,7 +128,10 @@ export class RedisCacheService {
     await this.delByPattern(`bookings:user:${userId}*`);
   }
 
-  async invalidateReviewsCache(proId?: string, serviceId?: string): Promise<void> {
+  async invalidateReviewsCache(
+    proId?: string,
+    serviceId?: string,
+  ): Promise<void> {
     if (proId) {
       await this.del(RedisCacheService.generateReviewsKey(undefined, proId));
     } else if (serviceId) {

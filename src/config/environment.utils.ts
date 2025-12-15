@@ -23,7 +23,9 @@ export function getDatabaseConfig(configService: ConfigService) {
   }
 
   return {
-    url: configService.get<string>('database.url') || 'postgresql://admin:password123@localhost:5432/khadamat_db?schema=public',
+    url:
+      configService.get<string>('database.url') ||
+      'postgresql://admin:password123@localhost:5432/khadamat_db?schema=public',
     logging: nodeEnv === 'development',
   };
 }
@@ -42,18 +44,20 @@ export function getPortConfig(configService: ConfigService) {
 }
 
 export function validateEnvironment(configService: ConfigService): void {
-  const requiredVars = [
-    'DATABASE_URL',
-    'JWT_SECRET',
-    'JWT_REFRESH_SECRET',
-  ];
+  const requiredVars = ['DATABASE_URL', 'JWT_SECRET', 'JWT_REFRESH_SECRET'];
 
-  const missingVars = requiredVars.filter(varName => !configService.get(varName));
+  const missingVars = requiredVars.filter(
+    (varName) => !configService.get(varName),
+  );
 
   if (missingVars.length > 0) {
-    console.warn(`⚠️  Missing required environment variables: ${missingVars.join(', ')}`);
+    console.warn(
+      `⚠️  Missing required environment variables: ${missingVars.join(', ')}`,
+    );
     if (configService.get<string>('app.nodeEnv') !== 'test') {
-      throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+      throw new Error(
+        `Missing required environment variables: ${missingVars.join(', ')}`,
+      );
     }
   }
 }

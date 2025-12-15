@@ -1,12 +1,11 @@
 import { Injectable, LoggerService } from '@nestjs/common';
 import * as winston from 'winston';
-import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AppLoggerService implements LoggerService {
   private logger: winston.Logger;
 
-  constructor(private configService?: ConfigService) {
+  constructor() {
     const isProduction = process.env.NODE_ENV === 'production';
 
     this.logger = winston.createLogger({
@@ -36,42 +35,47 @@ export class AppLoggerService implements LoggerService {
     });
   }
 
-  log(message: any, context?: string) {
+  // ✅ CORRECTION : Typage 'unknown' au lieu de 'any' et retour 'void'
+  log(message: unknown, context?: string): void {
     this.logger.info(this.sanitizeMessage(message), { context });
   }
 
-  error(message: any, trace?: string, context?: string) {
+  error(message: unknown, trace?: string, context?: string): void {
     this.logger.error(this.sanitizeMessage(message), { trace, context });
   }
 
-  warn(message: any, context?: string) {
+  warn(message: unknown, context?: string): void {
     this.logger.warn(this.sanitizeMessage(message), { context });
   }
 
-  debug(message: any, context?: string) {
+  debug(message: unknown, context?: string): void {
     this.logger.debug(this.sanitizeMessage(message), { context });
   }
 
-  verbose(message: any, context?: string) {
+  verbose(message: unknown, context?: string): void {
     this.logger.verbose(this.sanitizeMessage(message), { context });
   }
 
-  private sanitizeMessage(message: any): any {
-    // If it's a string that looks like JSON, try to parse and sanitize it
+  // ✅ CORRECTION : Logique de désinfection typée strictement
+  private sanitizeMessage(message: unknown): any {
+    // Cas 1 : C'est une chaîne de caractères
     if (typeof message === 'string') {
-      // Check if it looks like JSON
       const trimmed = message.trim();
-      if ((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
-          (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+      
+      // Tentative de parsing JSON si ça ressemble à du JSON
+      if (
+        (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+        (trimmed.startsWith('[') && trimmed.endsWith(']'))
+      ) {
         try {
           const parsed = JSON.parse(message);
           return JSON.stringify(this.sanitizeMessage(parsed));
         } catch {
-          // If parsing fails, treat as regular string
+          // Si ce n'est pas du JSON valide, on continue comme une string normale
         }
       }
 
-      // Remove potential sensitive data patterns
+      // Masquage des données sensibles dans la chaîne
       return message
         .replace(/password["\s]*:[\s"]*[^,\s}"]+/gi, 'password: [REDACTED]')
         .replace(/token["\s]*:[\s"]*[^,\s}"]+/gi, 'token: [REDACTED]')
@@ -79,14 +83,16 @@ export class AppLoggerService implements LoggerService {
         .replace(/email["\s]*:[\s"]*[^,\s,}]+@[^\s,}]+/gi, 'email: [REDACTED]');
     }
 
+    // Cas 2 : C'est un objet (et pas null)
     if (typeof message === 'object' && message !== null) {
-      const sanitized = { ...message };
+      // On force le typage en Record pour pouvoir itérer sur les clés
+      const sanitized = { ...(message as Record<string, unknown>) };
       const sensitiveKeys = ['password', 'token', 'secret', 'email'];
 
       for (const key of Object.keys(sanitized)) {
         if (sensitiveKeys.includes(key.toLowerCase())) {
           sanitized[key] = '[REDACTED]';
-        } else if (typeof sanitized[key] === 'object') {
+        } else if (typeof sanitized[key] === 'object' && sanitized[key] !== null) {
           sanitized[key] = this.sanitizeMessage(sanitized[key]);
         }
       }
@@ -94,6 +100,7 @@ export class AppLoggerService implements LoggerService {
       return sanitized;
     }
 
+    // Cas 3 : Autre type (number, boolean, undefined...), on renvoie tel quel
     return message;
   }
 }

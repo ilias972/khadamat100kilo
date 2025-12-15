@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import axios from 'axios';
 import { User, SignupDto } from '../types/api';
 import { authManager } from './auth';
 
@@ -76,9 +77,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = async (emailOrPhone: string, password: string): Promise<User> => {
     setIsLoading(true);
     try {
-      const loggedInUser = await authManager.login(emailOrPhone, password);
+      // Direct call to backend login to avoid misconfigured intermediaries
+      const response = await axios.post(
+        'http://127.0.0.1:3000/api/auth/login',
+        { email: emailOrPhone, password },
+        {
+          headers: { 'Content-Type': 'application/json' },
+          withCredentials: true,
+        },
+      );
+
+      const payload = response.data || {};
+      const accessToken = payload.accessToken || payload.access_token;
+      const refreshToken = payload.refreshToken || payload.refresh_token;
+      const loggedInUser = payload.user || null;
+
+      if (accessToken) {
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('khadamat_access_token', accessToken);
+      }
+      if (refreshToken) {
+        localStorage.setItem('refreshToken', refreshToken);
+      }
+
       setUser(loggedInUser);
-      return loggedInUser;
+      return loggedInUser as User;
     } finally {
       setIsLoading(false);
     }

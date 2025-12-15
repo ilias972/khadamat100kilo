@@ -1,0 +1,238 @@
+import {
+  Controller,
+  Post,
+  Body,
+  Res,
+  Req,
+  ValidationPipe,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Response, Request } from 'express';
+import { AuthService } from './auth.service';
+import { SignupDto } from './dtos/signup.dto';
+import { LoginDto } from './dtos/login.dto';
+import { RegisterDto } from './dtos/register.dto';
+import {
+  VerifyEmailDto,
+  ResendVerificationDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+} from './dtos/verify-email.dto';
+
+@ApiTags('auth')
+@Controller('auth')
+export class AuthController {
+  // ✅ API Response Caching - Added by API optimizer
+  private responseCache = new Map();
+
+  // ✅ Rate Limiting - Added by API optimizer
+  private rateLimitCache = new Map();
+
+  private checkRateLimit(ip: string, limit = 10, window = 60000) {
+    const now = Date.now();
+    const key = `rate_limit:${ip}`;
+
+    if (!this.rateLimitCache.has(key)) {
+      this.rateLimitCache.set(key, { count: 1, firstRequest: now });
+      return true;
+    }
+
+    const entry = this.rateLimitCache.get(key);
+
+    // Reset if window has passed
+    if (now - entry.firstRequest > window) {
+      this.rateLimitCache.set(key, { count: 1, firstRequest: now });
+      return true;
+    }
+
+    // Check if limit exceeded
+    if (entry.count >= limit) {
+      return false;
+    }
+
+    // Increment count
+    entry.count++;
+    return true;
+  }
+
+  // Cache middleware for auth endpoints
+  private async useCache(key: string, fn: () => Promise<any>, ttl = 30000) {
+    const cached = this.responseCache.get(key);
+    if (cached && Date.now() - cached.timestamp < ttl) {
+      return cached.data;
+    }
+
+    const result = await fn();
+    this.responseCache.set(key, { data: result, timestamp: Date.now() });
+    return result;
+  }
+
+  constructor(private readonly authService: AuthService) {}
+
+  @Post('signup')
+  @ApiOperation({ summary: 'User registration' })
+  @ApiResponse({ status: 201, description: 'User successfully registered' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  async signup(
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+    dto: SignupDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.authService.signup(dto);
+
+    // Set HttpOnly cookies for tokens
+    response.cookie('access_token', result.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 1000, // 1 hour
+    });
+
+    response.cookie('refresh_token', result.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    // Return user data with tokens
+    return { 
+      user: result.user, 
+      accessToken: result.access_token,
+      refreshToken: result.refresh_token  // ✅ AJOUTÉ
+    };
+  }
+
+  @Post('register')
+  @ApiOperation({ summary: 'User registration with performance metrics' })
+  @ApiResponse({ status: 201, description: 'User successfully registered' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  async register(
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+    dto: RegisterDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.authService.register(dto);
+
+    response.cookie('access_token', result.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 1000,
+    });
+
+    response.cookie('refresh_token', result.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return { 
+      user: result.user,
+      accessToken: result.access_token,
+      refreshToken: result.refresh_token  // ✅ AJOUTÉ
+    };
+  }
+
+  @Post('login')
+  @ApiOperation({ summary: 'User login' })
+  @ApiResponse({ status: 200, description: 'Login successful' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async login(
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+    dto: LoginDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.authService.login(dto);
+
+    // Set HttpOnly cookies for tokens
+    response.cookie('access_token', result.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 1000, // 1 hour
+    });
+
+    response.cookie('refresh_token', result.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    // 🚨 LE FIX COMPLET : ON RENVOIE LES DEUX TOKENS 🚨
+    return {
+      user: result.user,
+      accessToken: result.access_token,
+      refreshToken: result.refresh_token  // ✅ AJOUTÉ
+    };
+  }
+
+  @Post('refresh')
+  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiResponse({ status: 200, description: 'Token refreshed' })
+  @ApiResponse({ status: 401, description: 'Invalid refresh token' })
+  async refresh(
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    // Get refresh token from cookie or body
+    const refreshToken =
+      request.cookies?.refresh_token || request.body?.refreshToken;
+
+    if (!refreshToken) {
+      throw new UnauthorizedException('No refresh token found');
+    }
+
+    const result = await this.authService.refreshToken(refreshToken);
+
+    // Set new access token cookie
+    response.cookie('access_token', result.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 1000, // 1 hour
+    });
+
+    // Return new access token explicitly
+    return { 
+      user: result.user, 
+      accessToken: result.access_token,
+      refreshToken: result.refresh_token  // ✅ AJOUTÉ (optionnel pour refresh)
+    };
+  }
+
+  @Post('verify-email')
+  @ApiOperation({ summary: 'Verify user email' })
+  @ApiResponse({ status: 200, description: 'Email verified' })
+  @ApiResponse({ status: 400, description: 'Invalid token' })
+  async verifyEmail(@Body() dto: VerifyEmailDto) {
+    return this.authService.verifyEmail(dto);
+  }
+
+  @Post('resend-verification')
+  @ApiOperation({ summary: 'Resend email verification' })
+  @ApiResponse({ status: 200, description: 'Verification email sent' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  async resendVerification(@Body() dto: ResendVerificationDto) {
+    return this.authService.resendVerification(dto);
+  }
+
+  @Post('forgot-password')
+  @ApiOperation({ summary: 'Request password reset' })
+  @ApiResponse({ status: 200, description: 'Reset email sent' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @Post('reset-password')
+  @ApiOperation({ summary: 'Reset user password' })
+  @ApiResponse({ status: 200, description: 'Password reset successful' })
+  @ApiResponse({ status: 400, description: 'Invalid token' })
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
+  }
+}
