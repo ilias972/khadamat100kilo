@@ -218,8 +218,6 @@ function ProsPageContent() {
           </div>
         )}
       </main>
-
-      <Footer />
     </div>
   );
 }
@@ -242,7 +240,6 @@ export default function ProsPage() {
             </div>
           </div>
         </main>
-        <Footer />
       </div>
     }>
       <ProsPageContent />

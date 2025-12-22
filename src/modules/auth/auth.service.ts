@@ -37,8 +37,12 @@ export class AuthService {
     return this.login(email, password);
   }
 
-  // --- LOGIN (PROPRE) ---
+  // --- LOGIN (AVEC LOGS DE DEBUG) ---
   async login(email: string, pass: string) {
+    console.log('\n--- 🕵️‍♂️ TENTATIVE DE CONNEXION ---');
+    console.log(`1. Email reçu du front : "${email}"`);
+    console.log(`2. Mot de passe reçu   : "${pass}"`);
+
     const user = await this.prisma.user.findUnique({ 
       where: { email },
       include: {
@@ -47,14 +51,29 @@ export class AuthService {
       }
     });
 
-    if (!user || !user.passwordHash) {
+    if (!user) {
+      console.log('❌ ERREUR : Utilisateur introuvable dans la DB via Prisma.');
+      throw new UnauthorizedException('Email ou mot de passe incorrect');
+    }
+    
+    console.log(`3. Utilisateur trouvé  : ID ${user.id}`);
+    
+    // Vérification de sécurité sur le hash
+    if (!user.passwordHash) {
+      console.log('❌ ERREUR : Pas de hash sur cet utilisateur.');
+      throw new UnauthorizedException('Email ou mot de passe incorrect');
+    }
+    console.log(`4. Hash en base        : ${user.passwordHash.substring(0, 15)}...`);
+
+    const isMatch = await bcrypt.compare(pass, user.passwordHash);
+    console.log(`5. Résultat comparaison bcrypt : ${isMatch ? '✅ MATCH' : '❌ NO MATCH'}`);
+
+    if (!isMatch) {
+      console.log('❌ ERREUR : Le mot de passe ne correspond pas au hash.');
       throw new UnauthorizedException('Email ou mot de passe incorrect');
     }
 
-    const isMatch = await bcrypt.compare(pass, user.passwordHash);
-    if (!isMatch) {
-      throw new UnauthorizedException('Email ou mot de passe incorrect');
-    }
+    console.log('✅ SUCCÈS : Génération du token...');
 
     const payload = { 
       sub: user.id, 

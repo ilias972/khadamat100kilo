@@ -1,4 +1,9 @@
-import React, { useEffect, useMemo, useCallback } from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ModalProps {
@@ -7,98 +12,109 @@ interface ModalProps {
   title?: string;
   children: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  className?: string;
 }
 
-// Memoized Modal component to prevent unnecessary re-renders
-export const Modal: React.FC<ModalProps> = React.memo(({
-  isOpen,
-  onClose,
-  title,
-  children,
-  size = 'md'
-}) => {
-  // Memoize size classes to prevent recalculation on every render
-  const sizeClasses = useMemo(() => ({
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
-  }), []);
+export function Modal({ 
+  isOpen, 
+  onClose, 
+  title, 
+  children, 
+  size = 'md',
+  className 
+}: ModalProps) {
+  const [mounted, setMounted] = useState(false);
 
-  // Memoize event handlers to prevent recreation
-  const handleEscape = useCallback((event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      onClose();
-    }
-  }, [onClose]);
+  // 1. On attend que le composant soit monté côté client (Hydration safe)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  // Memoize the close handler for the overlay
-  const handleOverlayClick = useCallback(() => {
-    onClose();
-  }, [onClose]);
-
-  // Handle escape key and body scroll with optimized effect
+  // 2. On gère le scroll du body (Bloquer le scroll quand modal ouverte)
   useEffect(() => {
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
       document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
     }
-
+    // Nettoyage au démontage
     return () => {
-      document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, handleEscape]);
+  }, [isOpen]);
 
-  // Only render when modal is open to optimize performance
-  if (!isOpen) return null;
+  // 3. Gestion de la touche ECHAP
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
 
-  // Memoize the modal content to prevent unnecessary re-renders of children
-  const memoizedContent = useMemo(() => children, [children]);
+  // ✅ CORRECTION CRITIQUE : Cette condition est placée APRÈS tous les hooks
+  // pour éviter l'erreur "Rendered more hooks than during the previous render"
+  if (!mounted) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black bg-opacity-50"
-        onClick={handleOverlayClick}
-        aria-hidden="true"
-      />
-      <div
-        className={cn(
-          'relative bg-background rounded-2xl shadow-xl max-h-[90vh] overflow-auto w-full',
-          sizeClasses[size]
-        )}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={title ? 'modal-title' : undefined}
-      >
-        {title && (
-          <div className="flex items-center justify-between p-6 border-b border-border-light">
-            <h2 id="modal-title" className="text-lg font-semibold text-text-primary">
-              {title}
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-text-muted hover:text-text-primary transition-colors"
-              aria-label="Close modal"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-        <div className="p-6">
-          {memoizedContent}
+  // Sécurité supplémentaire pour s'assurer que document existe (SSR)
+  if (typeof document === 'undefined') return null;
+
+  // On utilise createPortal pour sortir la modal du flux HTML normal
+  return createPortal(
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6">
+          
+          {/* OVERLAY (Fond sombre) */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            aria-hidden="true"
+          />
+
+          {/* CONTENU MODAL */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ type: "spring", duration: 0.3 }}
+            className={cn(
+              "relative w-full bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]",
+              {
+                'max-w-md': size === 'sm',
+                'max-w-lg': size === 'md',
+                'max-w-2xl': size === 'lg',
+                'max-w-4xl': size === 'xl',
+              },
+              className
+            )}
+            role="dialog"
+            aria-modal="true"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-900 font-heading">
+                {title}
+              </h3>
+              <button
+                onClick={onClose}
+                className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-[#F97B22]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body Scrollable */}
+            <div className="p-6 overflow-y-auto custom-scrollbar">
+              {children}
+            </div>
+          </motion.div>
         </div>
-      </div>
-    </div>
+      )}
+    </AnimatePresence>,
+    document.body
   );
-}, (prevProps, nextProps) => {
-  // Custom comparison function to optimize re-rendering
-  return (
-    prevProps.isOpen === nextProps.isOpen &&
-    prevProps.title === nextProps.title &&
-    prevProps.size === nextProps.size &&
-    // Only re-render if children actually changed (shallow comparison)
-    prevProps.children === nextProps.children
-  );
-});
+}

@@ -8,17 +8,20 @@ import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
 import { bookingApi, proApi } from '@/lib/api-client';
 import { BookingStatus } from '@/types/api';
-import { Calendar, Clock, Star, TrendingUp, MessageSquare, Settings, User, DollarSign, CheckCircle, Plus } from 'lucide-react';
+import { 
+  Calendar, Clock, Star, 
+  Settings, User, Wallet, 
+  CheckCircle, Plus, AlertCircle 
+} from 'lucide-react';
 import { toast } from 'sonner';
-import { ProRoute } from '@/components/auth/ProtectedRoute';
 
 const getIcon = (iconName: string) => {
   switch (iconName) {
-    case 'DollarSign': return DollarSign;
+    case 'Wallet': return Wallet;
     case 'CheckCircle': return CheckCircle;
     case 'Star': return Star;
     case 'Clock': return Clock;
-    default: return DollarSign;
+    default: return Wallet;
   }
 };
 
@@ -30,77 +33,95 @@ export default function ProDashboard() {
   const [monthlyEarnings, setMonthlyEarnings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch data
+  // 1. Chargement des données sécurisé
   useEffect(() => {
+    let isMounted = true;
+
     const fetchData = async () => {
+      // Si pas d'utilisateur, on attend (AuthContext gère ça)
+      if (!user) return;
+
       try {
         setLoading(true);
-        // Skip if user is not available
-        if (!user) {
-          setLoading(false);
-          return;
-        }
+        console.log("Chargement Dashboard pour:", user.email);
+
         const [bookingsRes, statsRes] = await Promise.all([
           bookingApi.getMyBookings(),
-          proApi.getProStats(user.id)
+          proApi.getStats()
         ]);
-        // Filter pending bookings (assuming status 'PENDING')
-        const pending = bookingsRes.filter((b: any) => b.status === 'PENDING');
-        setPendingBookings(pending);
-        setStats(statsRes);
-        // For now, keep mock earnings or set empty
-        setMonthlyEarnings([]);
+
+        if (isMounted) {
+          // Filtrage des réservations en attente
+          const pending = Array.isArray(bookingsRes) 
+            ? bookingsRes.filter((b: any) => b.status === 'PENDING') 
+            : [];
+            
+          setPendingBookings(pending);
+          setStats(statsRes);
+          
+          // Données simulées pour le graphique (en attendant l'API historique)
+          setMonthlyEarnings([
+            { month: 'Jan', amount: 0 },
+            { month: 'Fév', amount: 0 },
+            { month: 'Mar', amount: 0 },
+            { month: 'Avr', amount: 0 },
+            { month: 'Mai', amount: 0 },
+            { month: 'Juin', amount: 0 }
+          ]);
+          
+          setLoading(false); // ✅ Arrêt explicite du chargement
+        }
       } catch (error) {
-        toast.error('Erreur lors du chargement des données');
-        console.error(error);
-      } finally {
-        setLoading(false);
+        console.error("Erreur Dashboard:", error);
+        if (isMounted) {
+          // Valeurs par défaut en cas d'erreur pour éviter la page blanche
+          setStats({
+              totalBookings: 0,
+              totalRevenue: 0,
+              activeServices: 0,
+              averageRating: 5.0
+          });
+          setLoading(false); // ✅ Arrêt même en cas d'erreur
+        }
       }
     };
 
     fetchData();
+
+    return () => { isMounted = false; };
+  }, [user]);
+
+  // 2. Sécurité : Force l'arrêt du spinner après 5 secondes max
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading((l) => {
+        if (l) console.warn("Dashboard : Délai d'attente dépassé, arrêt forcé du spinner.");
+        return false;
+      });
+    }, 5000);
+    return () => clearTimeout(timer);
   }, []);
 
-  if (loading) {
-    return (
-      <div className="p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-8"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-24 bg-gray-200 rounded"></div>
-              ))}
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="h-64 bg-gray-200 rounded"></div>
-              <div className="h-64 bg-gray-200 rounded"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const maxAmount = monthlyEarnings.length > 0 ? Math.max(...monthlyEarnings.map(e => e.amount)) : 100;
-
+  // Handlers
   const handleAccept = async (bookingId: string) => {
     try {
-      await bookingApi.updateBookingStatus(bookingId, BookingStatus.ACCEPTED);
+      await bookingApi.updateStatus(bookingId, BookingStatus.CONFIRMED);
       setPendingBookings(prev => prev.filter(b => b.id !== bookingId));
       toast.success('Demande acceptée');
     } catch (error) {
-      toast.error('Erreur lors de l\'acceptation');
+      console.error(error);
+      toast.error("Erreur lors de l'acceptation");
     }
   };
 
   const handleRefuse = async (bookingId: string) => {
     try {
-      await bookingApi.updateBookingStatus(bookingId, BookingStatus.CANCELLED);
+      await bookingApi.updateStatus(bookingId, BookingStatus.REJECTED);
       setPendingBookings(prev => prev.filter(b => b.id !== bookingId));
       toast.success('Demande refusée');
     } catch (error) {
-      toast.error('Erreur lors du refus');
+      console.error(error);
+      toast.error("Erreur lors du refus");
     }
   };
 
@@ -108,185 +129,213 @@ export default function ProDashboard() {
     router.push('/dashboard/pro/services');
   };
 
-  return (
-    <ProRoute>
-      <div className="p-6">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="mb-8 flex justify-between items-center"
-          >
-            <div>
-              <h1 className="text-3xl font-bold text-text-primary mb-2">
-                Bonjour, {user?.proProfile?.firstName || 'Professionnel'} ! 👋
-              </h1>
-              <p className="text-text-secondary">
-                Gérez vos réservations et suivez vos performances
-              </p>
-            </div>
-            <Button onClick={handleCreateService} className="flex items-center space-x-2">
-              <Plus className="h-4 w-4" />
-              <span>Créer un service</span>
-            </Button>
-          </motion.div>
-
-          {/* Stats Grid */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
-          >
-            {stats && [
-              {
-                title: 'Réservations totales',
-                value: stats.totalBookings,
-                icon: 'CheckCircle',
-                bgColor: 'bg-green-100',
-                color: 'text-green-600'
-              },
-              {
-                title: 'Revenus totaux',
-                value: `${stats.totalEarnings} DH`,
-                icon: 'DollarSign',
-                bgColor: 'bg-blue-100',
-                color: 'text-blue-600'
-              },
-              {
-                title: 'Services actifs',
-                value: stats.activeServices,
-                icon: 'Settings',
-                bgColor: 'bg-purple-100',
-                color: 'text-purple-600'
-              },
-              {
-                title: 'Note moyenne',
-                value: stats.averageRating?.toFixed(1) || '0.0',
-                icon: 'Star',
-                bgColor: 'bg-yellow-100',
-                color: 'text-yellow-600'
-              }
-            ].map((stat, index) => {
-              const IconComponent = getIcon(stat.icon);
-              return (
-                <motion.div
-                  key={stat.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.1 * index }}
-                >
-                  <Card className="p-6 hover:shadow-lg transition-shadow duration-300">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-text-secondary mb-1">
-                          {stat.title}
-                        </p>
-                        <p className="text-2xl font-bold text-text-primary">
-                          {stat.value}
-                        </p>
-                      </div>
-                      <div className={`p-3 rounded-lg ${stat.bgColor}`}>
-                        <IconComponent className={`h-6 w-6 ${stat.color}`} />
-                      </div>
-                    </div>
-                  </Card>
-                </motion.div>
-              );
-            })}
-          </motion.div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* À traiter */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              <Card className="p-6">
-                <h2 className="text-xl font-semibold text-text-primary mb-6">
-                  À traiter
-                </h2>
-                <div className="space-y-4">
-                  {pendingBookings.map((booking) => (
-                    <div key={booking.id} className="p-4 border border-border-light rounded-lg">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-medium text-text-primary">
-                            {booking.service}
-                          </h3>
-                          <p className="text-sm text-text-secondary">
-                            {booking.client} • {booking.location}
-                          </p>
-                          <p className="text-sm text-text-secondary">
-                            {booking.date} à {booking.time}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-text-primary mb-2">
-                            {booking.price}
-                          </p>
-                          <div className="flex space-x-2">
-                            <Button
-                              size="sm"
-                              className="bg-green-500 hover:bg-green-600"
-                              onClick={() => handleAccept(booking.id)}
-                            >
-                              Accepter
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="danger"
-                              onClick={() => handleRefuse(booking.id)}
-                            >
-                              Refuser
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </motion.div>
-
-            {/* Revenus */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-            >
-              <Card className="p-6">
-                <h2 className="text-xl font-semibold text-text-primary mb-6">
-                  Revenus
-                </h2>
-                <div className="flex items-end justify-between h-64 space-x-2">
-                  {monthlyEarnings.length > 0 ? monthlyEarnings.map((earning, index) => {
-                    const height = (earning.amount / maxAmount) * 100;
-                    return (
-                      <div key={index} className="flex flex-col items-center flex-1">
-                        <div
-                          className="w-full bg-primary-500 rounded-t"
-                          style={{ height: `${height}%` }}
-                        ></div>
-                        <span className="text-xs mt-2 text-text-secondary">
-                          {earning.month}
-                        </span>
-                      </div>
-                    );
-                  }) : (
-                    <div className="w-full flex items-center justify-center text-text-secondary">
-                      Données de revenus non disponibles
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </motion.div>
-          </div>
+  if (loading) {
+    return (
+      <div className="flex h-[80vh] items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#F97B22]"></div>
+            <p className="text-gray-500 text-sm animate-pulse">Chargement de votre espace...</p>
         </div>
       </div>
-    </ProRoute>
+    );
+  }
+
+  return (
+    <div className="p-6 animate-in fade-in duration-500">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="mb-8 flex flex-col md:flex-row justify-between md:items-center gap-4"
+        >
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2 font-heading">
+              Bonjour, {user?.firstName || 'Professionnel'} ! 👋
+            </h1>
+            <p className="text-gray-500">
+              Gérez vos réservations et suivez vos performances
+            </p>
+          </div>
+          <Button 
+              onClick={handleCreateService} 
+              className="bg-[#F97B22] hover:bg-[#d95f0d] text-white flex items-center space-x-2 px-6 py-6 rounded-xl shadow-lg shadow-orange-500/20"
+          >
+            <Plus className="h-5 w-5" />
+            <span className="font-bold">Créer un service</span>
+          </Button>
+        </motion.div>
+
+        {/* Stats Grid */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+        >
+          {[
+            {
+              title: 'Réservations',
+              value: stats?.totalBookings || 0,
+              icon: 'CheckCircle',
+              bgColor: 'bg-green-50',
+              color: 'text-green-600'
+            },
+            {
+              title: 'Revenus',
+              value: `${stats?.totalEarnings || stats?.totalRevenue || 0} DH`,
+              icon: 'Wallet',
+              bgColor: 'bg-blue-50',
+              color: 'text-blue-600'
+            },
+            {
+              title: 'Services actifs',
+              value: stats?.activeServices || 0,
+              icon: 'Settings',
+              bgColor: 'bg-purple-50',
+              color: 'text-purple-600'
+            },
+            {
+              title: 'Note moyenne',
+              value: Number(stats?.averageRating || 5).toFixed(1),
+              icon: 'Star',
+              bgColor: 'bg-yellow-50',
+              color: 'text-yellow-600'
+            }
+          ].map((stat, index) => {
+            const IconComponent = getIcon(stat.icon);
+            return (
+              <motion.div
+                key={stat.title}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 * index }}
+              >
+                <Card className="p-6 border-none shadow-sm hover:shadow-md transition-all duration-300">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 mb-1">
+                        {stat.title}
+                      </p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {stat.value}
+                      </p>
+                    </div>
+                    <div className={`p-3 rounded-xl ${stat.bgColor}`}>
+                      <IconComponent className={`h-6 w-6 ${stat.color}`} />
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* À traiter */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <Card className="p-6 border-none shadow-sm h-full">
+              <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <Clock className="w-5 h-5 text-[#F97B22]" /> À traiter
+              </h2>
+              
+              {pendingBookings.length === 0 ? (
+                  <div className="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                      <p className="text-gray-500">Aucune demande en attente 🎉</p>
+                  </div>
+              ) : (
+                  <div className="space-y-4">
+                  {pendingBookings.map((booking) => (
+                      <div key={booking.id} className="p-4 border border-gray-100 bg-white rounded-xl shadow-sm hover:border-[#F97B22]/30 transition-colors">
+                      <div className="flex justify-between items-start">
+                          <div>
+                          <h3 className="font-bold text-gray-900">
+                              {booking.service?.name || 'Service inconnu'}
+                          </h3>
+                          <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
+                              <User className="w-3 h-3" /> {booking.client?.firstName || 'Client'}
+                          </p>
+                          <p className="text-sm text-gray-500 flex items-center gap-1">
+                              <Calendar className="w-3 h-3" /> {new Date(booking.date).toLocaleDateString()}
+                          </p>
+                          </div>
+                          <div className="text-right flex flex-col items-end gap-3">
+                          <p className="font-bold text-[#F97B22] text-lg">
+                              {booking.totalPrice || booking.price} DH
+                          </p>
+                          <div className="flex space-x-2">
+                              <Button
+                              size="sm"
+                              className="bg-green-500 hover:bg-green-600 text-white border-none"
+                              onClick={() => handleAccept(booking.id)}
+                              >
+                              Accepter
+                              </Button>
+                              <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleRefuse(booking.id)}
+                              >
+                              Refuser
+                              </Button>
+                          </div>
+                          </div>
+                      </div>
+                      </div>
+                  ))}
+                  </div>
+              )}
+            </Card>
+          </motion.div>
+
+          {/* Revenus */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
+            <Card className="p-6 border-none shadow-sm h-full">
+              <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                  <Wallet className="w-5 h-5 text-green-600" /> Revenus (6 derniers mois)
+              </h2>
+              <div className="flex items-end justify-between h-64 space-x-2 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                {monthlyEarnings.length > 0 ? monthlyEarnings.map((earning, index) => {
+                  const maxAmount = Math.max(...monthlyEarnings.map(e => e.amount), 100);
+                  const height = (earning.amount / maxAmount) * 100;
+                  return (
+                    <div key={index} className="flex flex-col items-center flex-1 h-full justify-end group">
+                      <div className="relative w-full flex justify-center">
+                          <span className="absolute -top-8 text-xs font-bold bg-gray-800 text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                              {earning.amount} DH
+                          </span>
+                      </div>
+                      <div
+                        className="w-full bg-[#F97B22]/80 hover:bg-[#F97B22] rounded-t-lg transition-all duration-300"
+                        style={{ height: `${height}%`, minHeight: '4px' }}
+                      ></div>
+                      <span className="text-xs mt-3 font-medium text-gray-500">
+                        {earning.month}
+                      </span>
+                    </div>
+                  );
+                }) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                    <div className="text-center">
+                      <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      Données de revenus non disponibles
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </motion.div>
+        </div>
+      </div>
+    </div>
   );
 }

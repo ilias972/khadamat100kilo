@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import apiClient from './api/client';
 
 /**
@@ -20,10 +20,6 @@ interface CacheEntry<T> {
 
 // Cache storage type
 type ApiCache = Map<string, CacheEntry<any>>;
-
-// Global cache instance
-const globalCache: ApiCache = new Map();
-const pendingRequests: Map<string, Promise<any>> = new Map();
 
 /**
  * Generate cache key from request parameters
@@ -306,18 +302,17 @@ export const ApiCacheContext = React.createContext<{
  * Cache provider component
  */
 export function ApiCacheProvider({ children }: { children: React.ReactNode }) {
-  const cacheManagerRef = useRef(new ApiCacheManager());
-  const cachedClientRef = useRef(new CachedApiClient());
+  // ✅ CORRECTION : Utilisation de useMemo (stable) au lieu de useRef.current
+  // Cela évite l'erreur "Cannot access refs during render"
+  const cacheContextValue = useMemo(() => ({
+    cacheManager: new ApiCacheManager(),
+    cachedClient: new CachedApiClient()
+  }), []);
 
-  return React.createElement(
-    ApiCacheContext.Provider,
-    {
-      value: {
-        cacheManager: cacheManagerRef.current,
-        cachedClient: cachedClientRef.current
-      }
-    },
-    children
+  return (
+    <ApiCacheContext.Provider value={cacheContextValue}>
+      {children}
+    </ApiCacheContext.Provider>
   );
 }
 

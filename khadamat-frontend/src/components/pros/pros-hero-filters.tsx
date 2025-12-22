@@ -1,127 +1,154 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Search, MapPin, SlidersHorizontal, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
-import { type City } from '@/types/api';
 
-interface ProsHeroFiltersProps {
-  filters: {
-    cityId?: string;
-    category?: string;
-    search?: string;
-    minRating?: number;
-    onlyVerified?: boolean;
-    onlyPremium?: boolean;
-    page?: number;
-  };
-  onFiltersChange: (filters: Partial<ProsHeroFiltersProps['filters']>) => void;
-  cities: any[];
-  categories: any[];
-}
+// 👇 IMPORT DES LISTES CENTRALISÉES
+import { CITIES_LIST, SERVICES_LIST } from '@/lib/constants';
 
-export const ProsHeroFilters: React.FC<ProsHeroFiltersProps> = ({
-  filters,
-  onFiltersChange,
-  cities,
-  categories,
-}) => {
+export function ProsHeroFilters() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const handleFindPros = () => {
+  // États locaux
+  const [selectedService, setSelectedService] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  // 🔄 SYNCHRONISATION : On remplit les filtres si l'URL contient des paramètres
+  useEffect(() => {
+    const serviceFromUrl = searchParams.get('service');
+    const cityFromUrl = searchParams.get('city');
+
+    if (serviceFromUrl) setSelectedService(serviceFromUrl);
+    if (cityFromUrl) setSelectedCity(cityFromUrl);
+  }, [searchParams]);
+
+  // Lancer la recherche
+  const handleSearch = () => {
     const params = new URLSearchParams();
-    if (filters.cityId) params.set('cityId', filters.cityId);
-    if (filters.category) params.set('category', filters.category);
-    router.push(`/pros${params.toString() ? '?' + params.toString() : ''}`);
+    if (selectedService) params.append('service', selectedService);
+    if (selectedCity) params.append('city', selectedCity);
+    
+    router.push(`/pros?${params.toString()}`);
   };
+
+  // Effacer les filtres
+  const clearFilters = () => {
+    setSelectedService('');
+    setSelectedCity('');
+    router.push('/pros');
+  };
+
+  const hasActiveFilters = selectedService || selectedCity;
 
   return (
-    <section className="relative py-12 md:py-16">
-      <div className="absolute inset-0">
-        <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-br from-primary-200/20 to-primary-300/15 rounded-full mix-blend-multiply filter blur-3xl opacity-60"></div>
-        <div className="absolute top-40 right-10 w-80 h-80 bg-gradient-to-br from-secondary-300/20 to-primary-500/15 rounded-full mix-blend-multiply filter blur-3xl opacity-60"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.02)_1px,transparent_0)] bg-[length:24px_24px] opacity-20"></div>
-      </div>
-
-      <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <h1 className="text-h1 font-bold text-text-primary leading-tight tracking-tight font-heading mb-4">
-            Artisans vérifiés près de chez vous
-          </h1>
-          <p className="text-body text-text-secondary leading-relaxed font-body mb-8 max-w-2xl mx-auto">
-            Trouvez rapidement des professionnels qualifiés partout au Maroc.
-          </p>
-
-          {/* Quick Filters */}
-          <div className="max-w-4xl mx-auto bg-gradient-to-br from-[rgba(250,247,242,0.8)] to-[rgba(255,255,255,0.5)] backdrop-blur-sm rounded-[24px] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.06)] md:static sticky top-20 z-10">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              {/* City Filter */}
-              <div className="text-left">
-                <label className="block text-sm font-medium text-text-primary mb-2">
-                  Ville
-                </label>
-                <select
-                  value={filters.cityId || ''}
-                  onChange={(e) => onFiltersChange({ cityId: e.target.value || undefined })}
-                  className="w-full px-4 py-3 bg-[#EDEEEF] border-0 rounded-[24px] text-text-primary font-medium focus:outline-none focus:ring-2 focus:ring-primary-300 transition-all duration-200"
-                >
-                  <option value="">Toutes les villes</option>
-                  {cities.filter((city: any) => city.isActive).map((city: any) => (
-                    <option key={city.id} value={city.id}>
-                      {city.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Service Category Filter */}
-              <div className="text-left">
-                <label className="block text-sm font-medium text-text-primary mb-2">
-                  Type de service
-                </label>
-                <select
-                  value={filters.category || ''}
-                  onChange={(e) => onFiltersChange({ category: e.target.value || undefined })}
-                  className="w-full px-4 py-3 bg-[#EDEEEF] border-0 rounded-[24px] text-text-primary font-medium focus:outline-none focus:ring-2 focus:ring-primary-300 transition-all duration-200"
-                >
-                  <option value="">Tous les services</option>
-                  {categories.filter((cat: any) => cat.isActive).map((category: any) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Rating Filter */}
-              <div className="text-left">
-                <label className="block text-sm font-medium text-text-primary mb-2">
-                  Note minimale
-                </label>
-                <select
-                  value={filters.minRating || ''}
-                  onChange={(e) => onFiltersChange({ minRating: e.target.value ? parseFloat(e.target.value) : undefined })}
-                  className="w-full px-4 py-3 bg-[#EDEEEF] border-0 rounded-[24px] text-text-primary font-medium focus:outline-none focus:ring-2 focus:ring-primary-300 transition-all duration-200"
-                >
-                  <option value="">Toutes les notes</option>
-                  <option value="4.5">4.5★ et plus</option>
-                  <option value="4">4★ et plus</option>
-                  <option value="3.5">3.5★ et plus</option>
-                </select>
-              </div>
-            </div>
-
-            {/* CTA Button */}
-            <Button
-              onClick={handleFindPros}
-              disabled={!filters.cityId && !filters.category && !filters.minRating}
-              className="w-full bg-[#F97B22] hover:bg-[#e66a1f] text-white rounded-[24px] py-4 px-6 font-semibold transition-all duration-300 hover:shadow-xl hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+    <div className="bg-white border-b sticky top-16 z-30 shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        
+        {/* --- VERSION BUREAU --- */}
+        <div className="hidden md:flex items-center gap-4">
+          
+          {/* Filtre Service */}
+          <div className="relative flex-1 group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 group-focus-within:text-orange-500" />
+            <select
+              value={selectedService}
+              onChange={(e) => setSelectedService(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all cursor-pointer hover:bg-white appearance-none text-sm"
             >
-              Voir les professionnels
-            </Button>
+              <option value="">Tous les services</option>
+              {SERVICES_LIST.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
           </div>
+
+          {/* Filtre Ville */}
+          <div className="relative flex-1 group">
+            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 group-focus-within:text-orange-500" />
+            <select
+              value={selectedCity}
+              onChange={(e) => setSelectedCity(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all cursor-pointer hover:bg-white appearance-none text-sm"
+            >
+              <option value="">Toutes les villes</option>
+              {CITIES_LIST.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+
+          {/* Boutons */}
+          <Button 
+            onClick={handleSearch}
+            className="bg-gray-900 text-white hover:bg-orange-600 px-6 rounded-xl h-[42px]"
+          >
+            Filtrer
+          </Button>
+
+          {hasActiveFilters && (
+            <button 
+              onClick={clearFilters}
+              className="text-sm text-gray-500 hover:text-red-500 flex items-center gap-1 px-2"
+            >
+              <X className="w-4 h-4" /> Effacer
+            </button>
+          )}
         </div>
+
+        {/* --- VERSION MOBILE --- */}
+        <div className="md:hidden">
+          <button 
+            onClick={() => setIsFilterOpen(!isFilterOpen)}
+            className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200"
+          >
+            <span className="font-medium text-gray-700 flex items-center gap-2">
+              <SlidersHorizontal className="w-4 h-4" /> 
+              Filtres {hasActiveFilters && <span className="w-2 h-2 bg-orange-500 rounded-full"/>}
+            </span>
+            <span className="text-xs text-gray-500">
+              {hasActiveFilters ? 'Modifier' : 'Sélectionner'}
+            </span>
+          </button>
+
+          {isFilterOpen && (
+            <div className="mt-4 space-y-3 p-4 bg-white border rounded-xl shadow-lg absolute left-4 right-4 z-50">
+               <div>
+                 <label className="text-xs font-semibold text-gray-500 mb-1 block">Service</label>
+                 <select 
+                    value={selectedService} 
+                    onChange={(e) => setSelectedService(e.target.value)}
+                    className="w-full p-3 bg-gray-50 rounded-lg border"
+                 >
+                   <option value="">Tous</option>
+                   {SERVICES_LIST.map(s => <option key={s} value={s}>{s}</option>)}
+                 </select>
+               </div>
+               <div>
+                 <label className="text-xs font-semibold text-gray-500 mb-1 block">Ville</label>
+                 <select 
+                    value={selectedCity} 
+                    onChange={(e) => setSelectedCity(e.target.value)}
+                    className="w-full p-3 bg-gray-50 rounded-lg border"
+                 >
+                   <option value="">Toutes</option>
+                   {CITIES_LIST.map(c => <option key={c} value={c}>{c}</option>)}
+                 </select>
+               </div>
+               <div className="flex gap-2 pt-2">
+                 <Button onClick={() => { handleSearch(); setIsFilterOpen(false); }} className="flex-1 bg-orange-600">
+                   Appliquer
+                 </Button>
+                 {hasActiveFilters && (
+                   <Button variant="outline" onClick={() => { clearFilters(); setIsFilterOpen(false); }}>
+                     Effacer
+                   </Button>
+                 )}
+               </div>
+            </div>
+          )}
+        </div>
+
       </div>
-    </section>
+    </div>
   );
-};
+}

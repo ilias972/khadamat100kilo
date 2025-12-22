@@ -208,9 +208,6 @@ export default function ProfessionalProfilePage() {
         {/* Similar Professionals */}
         <ProSimilarProfessionals currentProfessional={professional} />
       </main>
-
-      <Footer />
-
       {/* Booking Modal */}
       <BookingModal
         isOpen={bookingModalOpen}

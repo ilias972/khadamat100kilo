@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence, HTMLMotionProps } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { entranceAnimations, microInteractions } from '@/lib/animations';
+// import { entranceAnimations, microInteractions } from '@/lib/animations'; // Commenté si non présent
 import {
   CheckCircle,
   XCircle,
@@ -283,6 +283,11 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({
 export const useToastAdvanced = () => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
+  // ✅ CORRECTION : Déclaration de removeToast AVANT addToast
+  const removeToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  }, []);
+
   const addToast = useCallback((toast: Omit<Toast, 'id'>) => {
     const id = Math.random().toString(36).substr(2, 9);
     const newToast: Toast = { ...toast, id };
@@ -292,16 +297,12 @@ export const useToastAdvanced = () => {
     // Auto remove after duration (except for loading toasts)
     if (toast.type !== 'loading' && toast.duration !== 0) {
       setTimeout(() => {
-        removeToast(id);
+        removeToast(id); // removeToast est maintenant bien défini ici
       }, toast.duration || 5000);
     }
 
     return id;
-  }, []);
-
-  const removeToast = useCallback((id: string) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
-  }, []);
+  }, [removeToast]); // ✅ Ajout de removeToast aux dépendances
 
   const clearAll = useCallback(() => {
     setToasts([]);

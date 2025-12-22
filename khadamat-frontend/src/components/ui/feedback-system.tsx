@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence, HTMLMotionProps } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { microInteractions } from '@/lib/animations';
+// Assurez-vous que ce fichier existe, sinon vous pouvez commenter l'import
+// import { microInteractions } from '@/lib/animations'; 
 import {
   CheckCircle,
   XCircle,
@@ -11,8 +12,7 @@ import {
   Info,
   Loader2,
   Check,
-  X,
-  AlertCircle
+  X
 } from 'lucide-react';
 
 export type FeedbackType = 'success' | 'error' | 'warning' | 'info' | 'loading';
@@ -38,7 +38,7 @@ interface FeedbackSystemProps {
 }
 
 // Individual feedback message component
-const FeedbackMessage: React.FC<{
+const FeedbackMessageComponent: React.FC<{
   message: FeedbackMessage;
   onRemove: (id: string) => void;
   position: 'top' | 'bottom' | 'inline';
@@ -258,7 +258,7 @@ export const FeedbackSystem: React.FC<FeedbackSystemProps> = ({
         <AnimatePresence mode="popLayout">
           {displayMessages.map((message) => (
             <div key={message.id} className="w-full">
-              <FeedbackMessage
+              <FeedbackMessageComponent
                 message={message}
                 onRemove={onRemove}
                 position={position}
@@ -275,7 +275,7 @@ export const FeedbackSystem: React.FC<FeedbackSystemProps> = ({
       <div className="flex flex-col space-y-3 items-center">
         <AnimatePresence mode="popLayout">
           {displayMessages.map((message) => (
-            <FeedbackMessage
+            <FeedbackMessageComponent
               key={message.id}
               message={message}
               onRemove={onRemove}
@@ -422,6 +422,11 @@ export const PulseIndicator: React.FC<{
 export const useFeedback = () => {
   const [messages, setMessages] = useState<FeedbackMessage[]>([]);
 
+  // ✅ CORRECTION : Déclaration de removeMessage AVANT addMessage
+  const removeMessage = useCallback((id: string) => {
+    setMessages(prev => prev.filter(msg => msg.id !== id));
+  }, []);
+
   const addMessage = useCallback((message: Omit<FeedbackMessage, 'id'>) => {
     const id = Math.random().toString(36).substr(2, 9);
     const newMessage: FeedbackMessage = { ...message, id };
@@ -431,16 +436,12 @@ export const useFeedback = () => {
     // Auto remove after duration (except for loading)
     if (message.type !== 'loading' && message.duration !== 0) {
       setTimeout(() => {
-        removeMessage(id);
+        removeMessage(id); // removeMessage est maintenant bien défini ici
       }, message.duration || 4000);
     }
 
     return id;
-  }, []);
-
-  const removeMessage = useCallback((id: string) => {
-    setMessages(prev => prev.filter(msg => msg.id !== id));
-  }, []);
+  }, [removeMessage]); // ✅ Ajout de removeMessage aux dépendances
 
   const clearAll = useCallback(() => {
     setMessages([]);

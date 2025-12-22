@@ -2,58 +2,64 @@
 
 import { Header } from '@/components/layout/header';
 import { OptimizedImage } from '@/components/ui/optimized-image';
-import { Footer } from '@/components/layout/footer';
 import { LazySection } from '@/components/ui/lazy-section';
 import { FadeInStagger } from '@/components/motion/fade-in-stagger';
-import { MoroccanPattern } from '@/components/motion/moroccan-pattern';
 import dynamic from 'next/dynamic';
 
-// Critical components loaded immediately
+// Critical components
 import { Hero } from '@/components/sections/hero';
 
-// Non-critical components lazy loaded
-const HowItWorks = dynamic(() => import('@/components/sections/how-it-works').then(mod => ({ default: mod.HowItWorks })), {
-  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg"></div>
-});
+// Lazy loaded components
 const PopularServices = dynamic(() => import('@/components/sections/popular-services').then(mod => ({ default: mod.PopularServices })), {
-  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg"></div>
+  loading: () => <div className="h-96 bg-gray-100/50 animate-pulse rounded-3xl mx-4 my-8"></div>
 });
 const ServicesByCity = dynamic(() => import('@/components/sections/services-by-city').then(mod => ({ default: mod.ServicesByCity })), {
-  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg"></div>
+  loading: () => <div className="h-96 bg-gray-100/50 animate-pulse rounded-3xl mx-4 my-8"></div>
 });
-const WhyChooseKhadamat = dynamic(() => import('@/components/sections/why-choose-khadamat').then(mod => ({ default: mod.WhyChooseKhadamat })), {
-  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg"></div>
-});
-const FeaturedProfessionals = dynamic(() => import('@/components/sections/featured-professionals').then(mod => ({ default: mod.FeaturedProfessionals })), {
-  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg"></div>
-});
-const SocialProof = dynamic(() => import('@/components/sections/social-proof').then(mod => ({ default: mod.SocialProof })), {
-  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg"></div>
-});
-const BlogAstuces = dynamic(() => import('@/components/sections/blog-astuces').then(mod => ({ default: mod.BlogAstuces })), {
-  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg"></div>
-});
-const MiniFaq = dynamic(() => import('@/components/sections/mini-faq').then(mod => ({ default: mod.MiniFaq })), {
-  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg"></div>
-});
-const JoinAsPro = dynamic(() => import('@/components/sections/join-as-pro').then(mod => ({ default: mod.JoinAsPro })), {
-  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg"></div>
-});
-const FinalCta = dynamic(() => import('@/components/sections/final-cta').then(mod => ({ default: mod.FinalCta })), {
-  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg"></div>
-});
+
+// Autres sections (gardées telles quelles, mais lazy loadées)
+const HowItWorks = dynamic(() => import('@/components/sections/how-it-works').then(mod => ({ default: mod.HowItWorks })));
+const FeaturedProfessionals = dynamic(() => import('@/components/sections/featured-professionals').then(mod => ({ default: mod.FeaturedProfessionals })));
+const WhyChooseKhadamat = dynamic(() => import('@/components/sections/why-choose-khadamat').then(mod => ({ default: mod.WhyChooseKhadamat })));
+const SocialProof = dynamic(() => import('@/components/sections/social-proof').then(mod => ({ default: mod.SocialProof })));
+const BlogAstuces = dynamic(() => import('@/components/sections/blog-astuces').then(mod => ({ default: mod.BlogAstuces })));
+const MiniFaq = dynamic(() => import('@/components/sections/mini-faq').then(mod => ({ default: mod.MiniFaq })));
+const JoinAsPro = dynamic(() => import('@/components/sections/join-as-pro').then(mod => ({ default: mod.JoinAsPro })));
+const FinalCta = dynamic(() => import('@/components/sections/final-cta').then(mod => ({ default: mod.FinalCta })));
 
 export default function Home() {
   return (
-    <div className="min-h-screen relative">
+    <div className="min-h-screen relative overflow-hidden bg-[#FDFBF7]">
+      
+      {/* --- FOND MAÎTRE (MASTER BACKGROUND) --- */}
+      {/* Ce fond reste fixe et unifie toutes les sections */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        
+        {/* 1. Motif Zellige Subtil (SVG en data URI pour la perf) */}
+        <div 
+          className="absolute inset-0 opacity-[0.03]"
+          style={{ 
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0 L60 30 L30 60 L0 30 Z' fill='%23F97B22' fill-opacity='1'/%3E%3C/svg%3E")`,
+          }}
+        />
+
+        {/* 2. Lueurs colorées (Blobs) */}
+        <div className="absolute top-[-10%] right-[-10%] w-[800px] h-[800px] bg-orange-200/20 rounded-full blur-[100px]" />
+        <div className="absolute top-[40%] left-[-10%] w-[600px] h-[600px] bg-blue-100/20 rounded-full blur-[100px]" />
+        <div className="absolute bottom-[-10%] right-[10%] w-[700px] h-[700px] bg-green-50/20 rounded-full blur-[100px]" />
+      </div>
+
       <Header />
-      <main className="space-y-0">
+      
+      <main className="relative z-10 space-y-0">
+        {/* Hero est transparent pour montrer le fond maître */}
         <Hero />
+        
         <FadeInStagger direction="up" staggerDelay={0.1}>
           <PopularServices />
         </FadeInStagger>
 
-        {/* Top Artisans - Immediate social proof after services */}
+        {/* Autres sections... */}
         <LazySection>
           <FadeInStagger direction="up" staggerDelay={0.1}>
             <FeaturedProfessionals />
@@ -64,50 +70,20 @@ export default function Home() {
           <HowItWorks />
         </FadeInStagger>
 
-        {/* Lazy loaded sections */}
         <LazySection>
-          <FadeInStagger direction="up" staggerDelay={0.1}>
-            <WhyChooseKhadamat />
-          </FadeInStagger>
+           <FadeInStagger direction="up" staggerDelay={0.1}>
+             <ServicesByCity />
+           </FadeInStagger>
         </LazySection>
 
-        <LazySection>
-          <FadeInStagger direction="up" staggerDelay={0.1}>
-            <ServicesByCity />
-          </FadeInStagger>
-        </LazySection>
-
-        <LazySection>
-          <FadeInStagger direction="up" staggerDelay={0.1}>
-            <SocialProof />
-          </FadeInStagger>
-        </LazySection>
-
-        <LazySection>
-          <FadeInStagger direction="up" staggerDelay={0.1}>
-            <BlogAstuces />
-          </FadeInStagger>
-        </LazySection>
-
-        <LazySection>
-          <FadeInStagger direction="up" staggerDelay={0.1}>
-            <MiniFaq />
-          </FadeInStagger>
-        </LazySection>
-
-        <LazySection>
-          <FadeInStagger direction="up" staggerDelay={0.1}>
-            <JoinAsPro />
-          </FadeInStagger>
-        </LazySection>
-
-        <LazySection>
-          <FadeInStagger direction="up" staggerDelay={0.1}>
-            <FinalCta />
-          </FadeInStagger>
-        </LazySection>
+        {/* Le reste des sections lazy loadées */}
+        <LazySection><WhyChooseKhadamat /></LazySection>
+        <LazySection><SocialProof /></LazySection>
+        <LazySection><BlogAstuces /></LazySection>
+        <LazySection><MiniFaq /></LazySection>
+        <LazySection><JoinAsPro /></LazySection>
+        <LazySection><FinalCta /></LazySection>
       </main>
-      <Footer />
     </div>
   );
 }

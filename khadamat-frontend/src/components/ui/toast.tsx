@@ -28,7 +28,7 @@ export const Toast: React.FC<ToastProps> = React.memo(({
   // Memoize close handler to prevent recreation
   const handleClose = useCallback(() => {
     setVisible(false);
-    onClose?.();
+    if (onClose) onClose();
   }, [onClose]);
 
   useEffect(() => {
@@ -38,14 +38,8 @@ export const Toast: React.FC<ToastProps> = React.memo(({
     }
   }, [duration, handleClose]);
 
-  // Only render when visible to optimize performance
+  // ✅ CORRECTION : Le "early return" est placé APRÈS tous les hooks
   if (!visible) return null;
-
-  // Memoize the close button handler
-  const handleCloseButtonClick = useCallback(() => {
-    setVisible(false);
-    onClose?.();
-  }, [onClose]);
 
   return (
     <div
@@ -59,7 +53,7 @@ export const Toast: React.FC<ToastProps> = React.memo(({
       <span className="flex-1">{message}</span>
       {onClose && (
         <button
-          onClick={handleCloseButtonClick}
+          onClick={handleClose} // On utilise handleClose directement (plus besoin de doublon)
           className="ml-4 text-current opacity-75 hover:opacity-100 transition-opacity"
           aria-label="Close notification"
         >
@@ -76,3 +70,6 @@ export const Toast: React.FC<ToastProps> = React.memo(({
     prevProps.duration === nextProps.duration
   );
 });
+
+// Ajout du DisplayName pour le debugging (et éviter l'erreur eslint 'display-name')
+Toast.displayName = 'Toast';

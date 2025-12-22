@@ -159,8 +159,6 @@ function ServicesPageContent() {
         </section>
 
       </main>
-
-      <Footer />
     </div>
   );
 }
@@ -183,7 +181,6 @@ export default function ServicesPage() {
             </div>
           </div>
         </main>
-        <Footer />
       </div>
     }>
       <ServicesPageContent />

@@ -1,17 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { 
-  ChevronLeft, 
-  ChevronRight, 
   TrendingUp, 
   TrendingDown,
   Activity,
-  DollarSign,
-  Calendar,
-  Users,
   BarChart3,
   PieChart,
   LineChart
@@ -39,6 +34,37 @@ interface MobileChartProps {
   className?: string;
 }
 
+// ✅ CORRECTION : Déplacé à l'extérieur pour éviter la recréation à chaque rendu
+const VARIANT_STYLES = {
+  revenue: {
+    primary: 'stroke-[#F97B22]',
+    fill: 'fill-[#F97B22]/20',
+    background: 'bg-gradient-to-br from-[rgba(249,123,34,0.1)] to-[rgba(249,123,34,0.05)]'
+  },
+  bookings: {
+    primary: 'stroke-blue-500',
+    fill: 'fill-blue-500/20',
+    background: 'bg-gradient-to-br from-blue-50 to-blue-100/30'
+  },
+  performance: {
+    primary: 'stroke-green-500',
+    fill: 'fill-green-500/20',
+    background: 'bg-gradient-to-br from-green-50 to-green-100/30'
+  },
+  trends: {
+    primary: 'stroke-purple-500',
+    fill: 'fill-purple-500/20',
+    background: 'bg-gradient-to-br from-purple-50 to-purple-100/30'
+  }
+};
+
+const ICON_MAP = {
+  bar: BarChart3,
+  donut: PieChart,
+  area: Activity,
+  line: LineChart
+};
+
 export function MobileChart({
   title,
   subtitle,
@@ -54,32 +80,12 @@ export function MobileChart({
 }: MobileChartProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedPoint, setSelectedPoint] = useState<ChartDataPoint | null>(null);
-  const chartRef = useRef<HTMLDivElement>(null);
+  
+  // Utilisation des styles constants
+  const styles = VARIANT_STYLES[variant];
 
-  const variantStyles = {
-    revenue: {
-      primary: 'stroke-[#F97B22]',
-      fill: 'fill-[#F97B22]/20',
-      background: 'bg-gradient-to-br from-[rgba(249,123,34,0.1)] to-[rgba(249,123,34,0.05)]'
-    },
-    bookings: {
-      primary: 'stroke-blue-500',
-      fill: 'fill-blue-500/20',
-      background: 'bg-gradient-to-br from-blue-50 to-blue-100/30'
-    },
-    performance: {
-      primary: 'stroke-green-500',
-      fill: 'fill-green-500/20',
-      background: 'bg-gradient-to-br from-green-50 to-green-100/30'
-    },
-    trends: {
-      primary: 'stroke-purple-500',
-      fill: 'fill-purple-500/20',
-      background: 'bg-gradient-to-br from-purple-50 to-purple-100/30'
-    }
-  };
-
-  const styles = variantStyles[variant];
+  // ✅ CORRECTION : Assignation directe au lieu d'une fonction qui retourne un composant
+  const ChartIcon = ICON_MAP[type] || LineChart;
 
   const formatValue = (value: number) => {
     if (variant === 'revenue') {
@@ -91,29 +97,18 @@ export function MobileChart({
     return value.toString();
   };
 
-  const getChartIcon = () => {
-    switch (type) {
-      case 'bar': return BarChart3;
-      case 'donut': return PieChart;
-      case 'area': return Activity;
-      default: return LineChart;
-    }
-  };
-
-  const ChartIcon = getChartIcon();
-
-  // Simple SVG chart implementation for mobile
-  const renderChart = () => {
+  // Helper pour le rendu du SVG (Ce n'est plus un composant React, juste une fonction de calcul)
+  const getChartContent = () => {
     if (!data || data.length === 0) return null;
 
     const maxValue = Math.max(...data.map(d => d.value));
     const minValue = Math.min(...data.map(d => d.value));
-    const range = maxValue - minValue;
+    const range = maxValue - minValue || 1; // Évite la division par zéro
     
     const width = 280; // Fixed width for mobile
     const padding = 20;
     const chartWidth = width - padding * 2;
-    const chartHeight = height - 40; // Reserve space for labels
+    const chartHeight = height - 40; 
     
     const points = data.map((point, index) => {
       const x = padding + (index / (data.length - 1)) * chartWidth;
@@ -143,14 +138,14 @@ export function MobileChart({
             />
           ))}
           
-          {/* Area fill (for area charts) */}
+          {/* Area fill */}
           {type === 'area' && (
             <motion.path
               d={areaData}
               className={styles.fill}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 500, delay: 100 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
             />
           )}
           
@@ -160,7 +155,7 @@ export function MobileChart({
             className={cn('fill-none stroke-2', styles.primary)}
             initial={{ pathLength: 0 }}
             animate={{ pathLength: 1 }}
-            transition={{ duration: 1000, ease: 'easeInOut' }}
+            transition={{ duration: 1, ease: 'easeInOut' }}
           />
           
           {/* Data points */}
@@ -173,20 +168,20 @@ export function MobileChart({
               className={cn('fill-white', styles.primary)}
               initial={{ r: 0 }}
               animate={{ r: 3 }}
-              transition={{ duration: 300, delay: index * 50 }}
+              transition={{ duration: 0.3, delay: index * 0.05 }}
               onClick={() => setSelectedPoint(point)}
               style={{ cursor: interactive ? 'pointer' : 'default' }}
             />
           ))}
           
           {/* X-axis labels */}
-          {points.filter((_, i) => i % Math.ceil(data.length / 4) === 0).map((point, index) => (
+          {points.filter((_, i) => i % Math.max(1, Math.ceil(data.length / 4)) === 0).map((point, index) => (
             <text
               key={index}
               x={point.x}
               y={height - 5}
               textAnchor="middle"
-              className="text-xs fill-text-muted"
+              className="text-xs fill-gray-400"
             >
               {point.label}
             </text>
@@ -198,7 +193,7 @@ export function MobileChart({
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-full bg-gray-900 text-white px-3 py-2 rounded-lg text-sm whitespace-nowrap"
+            className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-full bg-gray-900 text-white px-3 py-2 rounded-lg text-sm whitespace-nowrap z-10"
           >
             {selectedPoint.label}: {formatValue(selectedPoint.value)}
             <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900" />
@@ -211,15 +206,15 @@ export function MobileChart({
   if (loading) {
     return (
       <div className={cn(
-        'bg-gradient-to-br from-[rgba(250,247,242,0.8)] to-[rgba(255,255,255,0.5)] backdrop-blur-sm rounded-[24px] shadow-card p-6',
+        'bg-white/80 backdrop-blur-sm rounded-[24px] shadow-sm p-6',
         className
       )}>
         <div className="animate-pulse">
           <div className="flex items-center justify-between mb-4">
-            <div className="h-6 bg-[#EDEEEF] rounded w-32"></div>
-            <div className="h-6 bg-[#EDEEEF] rounded w-6"></div>
+            <div className="h-6 bg-gray-200 rounded w-32"></div>
+            <div className="h-6 bg-gray-200 rounded w-6"></div>
           </div>
-          <div className="h-40 bg-[#EDEEEF] rounded"></div>
+          <div className="h-40 bg-gray-200 rounded"></div>
         </div>
       </div>
     );
@@ -228,14 +223,14 @@ export function MobileChart({
   if (error) {
     return (
       <div className={cn(
-        'bg-gradient-to-br from-[rgba(250,247,242,0.8)] to-[rgba(255,255,255,0.5)] backdrop-blur-sm rounded-[24px] shadow-card p-6',
+        'bg-white/80 backdrop-blur-sm rounded-[24px] shadow-sm p-6',
         className
       )}>
         <div className="text-center">
           <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Activity className="w-6 h-6 text-red-500" />
           </div>
-          <h3 className="text-lg font-semibold text-text-primary mb-2">{title}</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
           <p className="text-sm text-red-600">Erreur de chargement: {error}</p>
         </div>
       </div>
@@ -245,13 +240,13 @@ export function MobileChart({
   if (!data || data.length === 0) {
     return (
       <div className={cn(
-        'bg-gradient-to-br from-[rgba(250,247,242,0.8)] to-[rgba(255,255,255,0.5)] backdrop-blur-sm rounded-[24px] shadow-card p-6',
+        'bg-white/80 backdrop-blur-sm rounded-[24px] shadow-sm p-6',
         className
       )}>
         <div className="text-center">
-          <ChartIcon className="w-12 h-12 text-text-muted mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-text-primary mb-2">{title}</h3>
-          <p className="text-sm text-text-muted">Aucune donnée disponible</p>
+          <ChartIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+          <p className="text-sm text-gray-400">Aucune donnée disponible</p>
         </div>
       </div>
     );
@@ -260,12 +255,12 @@ export function MobileChart({
   return (
     <motion.div
       className={cn(
-        'bg-gradient-to-br from-[rgba(250,247,242,0.8)] to-[rgba(255,255,255,0.5)] backdrop-blur-sm rounded-[24px] shadow-card overflow-hidden',
+        'bg-white/80 backdrop-blur-sm rounded-[24px] shadow-sm overflow-hidden',
         className
       )}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 300 }}
+      transition={{ duration: 0.3 }}
     >
       {/* Header */}
       <div className="p-6 pb-4">
@@ -275,9 +270,9 @@ export function MobileChart({
               <ChartIcon className={cn('w-5 h-5', styles.primary.replace('stroke-', 'text-'))} />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-text-primary font-heading">{title}</h3>
+              <h3 className="text-lg font-bold text-gray-900 font-heading">{title}</h3>
               {subtitle && (
-                <p className="text-sm text-text-secondary">{subtitle}</p>
+                <p className="text-sm text-gray-500">{subtitle}</p>
               )}
             </div>
           </div>
@@ -285,7 +280,7 @@ export function MobileChart({
           {/* Current value and trend */}
           {data.length > 0 && (
             <div className="text-right">
-              <div className="text-lg font-bold text-text-primary">
+              <div className="text-lg font-bold text-gray-900">
                 {formatValue(data[data.length - 1]?.value || 0)}
               </div>
               {data[data.length - 1]?.change && (
@@ -309,7 +304,7 @@ export function MobileChart({
       {/* Chart Container */}
       <div className="px-6 pb-6">
         <div className="relative">
-          {renderChart()}
+          {getChartContent()}
         </div>
       </div>
 
@@ -322,7 +317,7 @@ export function MobileChart({
               onClick={() => setCurrentIndex(i)}
               className={cn(
                 'w-2 h-2 rounded-full transition-all',
-                i === currentIndex ? 'bg-[#F97B22] scale-125' : 'bg-[#EDEEEF]'
+                i === currentIndex ? 'bg-[#F97B22] scale-125' : 'bg-gray-200'
               )}
             />
           ))}
@@ -334,6 +329,8 @@ export function MobileChart({
         <div 
           className="absolute inset-0 cursor-pointer"
           onClick={() => setSelectedPoint(null)}
+          // Empêche le clic de traverser si le tooltip est actif
+          style={{ pointerEvents: selectedPoint ? 'auto' : 'none' }}
         />
       )}
     </motion.div>
@@ -466,7 +463,7 @@ export function SwipeableCharts({ charts, className }: SwipeableChartsProps) {
             onClick={() => setActiveIndex(index)}
             className={cn(
               'w-2 h-2 rounded-full transition-all',
-              index === activeIndex ? 'bg-[#F97B22] scale-125' : 'bg-[#EDEEEF]'
+              index === activeIndex ? 'bg-[#F97B22] scale-125' : 'bg-gray-200'
             )}
           />
         ))}

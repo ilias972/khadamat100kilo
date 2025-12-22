@@ -5,28 +5,23 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // ✅ CONFIGURATION CORS COMPLÈTE & ROBUSTE
-  // Placée avant le préfixe pour s'assurer qu'elle s'applique à tout.
+  // 1. CORS
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
   app.enableCors({
-    origin: 'http://localhost:3000', // L'URL exacte de votre Frontend
-    credentials: true,               // Autorise les cookies/sessions
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], // Liste explicite
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',  // 🚨 CRUCIAL : C'est souvent lui qui bloquait
-      'Accept',
-      'Origin',
-      'X-Requested-With',
-    ],
-    exposedHeaders: ['Authorization'], // Permet au front de lire le header si besoin
+    origin: frontendUrl,
+    credentials: true,
   });
 
+  // ✅ 2. LE PRÉFIXE MANQUANT (C'est ça qui causait le 404 !)
+  // Cela transforme toutes les routes "auth/login" en "api/auth/login"
   app.setGlobalPrefix('api');
 
-  // Validation des données entrantes (DTOs)
-  app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
+  app.useGlobalPipes(new ValidationPipe());
 
-  await app.listen(4000);
-  console.log('🚀 BACKEND EN LIGNE : http://localhost:4000/api');
+  // 3. PORT
+  const port = process.env.PORT || 4000;
+  await app.listen(port);
+  
+  console.log(`🚀 BACKEND en ligne sur : http://localhost:${port}/api`);
 }
 bootstrap();

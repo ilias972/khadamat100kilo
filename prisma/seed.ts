@@ -1,134 +1,117 @@
-import { PrismaClient, City, ServiceCategory } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seeding cities and service categories...');
+  console.log('🌱 Début du seed (Remplissage de la base)...');
 
-  try {
-    // Create cities
-    const cities = [
-      { id: 'casablanca', name: 'Casablanca', region: 'Grand Casablanca' },
-      { id: 'rabat', name: 'Rabat', region: 'Rabat-Salé-Zemmour-Zaër' },
-      { id: 'marrakech', name: 'Marrakech', region: 'Marrakech-Tensift-Al Haouz' },
-      { id: 'tanger', name: 'Tanger', region: 'Tanger-Tétouan' },
-      { id: 'fes', name: 'Fès', region: 'Fès-Boulemane' },
-      { id: 'agadir', name: 'Agadir', region: 'Souss-Massa' },
-      { id: 'meknes', name: 'Meknès', region: 'Meknès-Tafilalet' },
-      { id: 'oujda', name: 'Oujda', region: 'Oriental' },
-    ];
+  // 1. Création des Villes
+  console.log('📍 Création des villes...');
+  const cities = ['Casablanca', 'Rabat', 'Marrakech', 'Tanger', 'Agadir', 'Fès', 'Kénitra'];
+  
+  // On garde en mémoire les villes créées pour récupérer leurs IDs
+  const cityMap = new Map();
 
-    const createdCities: City[] = [];
-    for (const city of cities) {
-      const createdCity = await prisma.city.upsert({
-        where: { id: city.id },
-        update: {},
-        create: {
-          id: city.id,
-          name: city.name,
-          region: city.region,
-          isActive: true,
-        },
-      });
-      createdCities.push(createdCity);
-      console.log(`✅ City created/updated: ${createdCity.name} (ID: ${createdCity.id})`);
-    }
-
-    // Create service categories
-    const serviceCategories = [
-      { id: 'plomberie', name: 'Plomberie', description: 'Réparations et installations de plomberie', icon: 'Wrench' },
-      { id: 'electricite', name: 'Électricité', description: 'Travaux électriques et installations', icon: 'Zap' },
-      { id: 'menage', name: 'Ménage', description: 'Services de nettoyage et ménage', icon: 'Home' },
-      { id: 'peinture', name: 'Peinture', description: 'Peinture intérieure et extérieure', icon: 'Paintbrush' },
-      { id: 'jardinage', name: 'Jardinage', description: 'Entretien des jardins et espaces verts', icon: 'Leaf' },
-      { id: 'maconnerie', name: 'Maçonnerie', description: 'Travaux de maçonnerie et construction', icon: 'Hammer' },
-    ];
-
-    const createdCategories: ServiceCategory[] = [];
-    for (const category of serviceCategories) {
-      const createdCategory = await prisma.serviceCategory.upsert({
-        where: { id: category.id },
-        update: {},
-        create: {
-          id: category.id,
-          name: category.name,
-          description: category.description,
-          icon: category.icon,
-          isActive: true,
-        },
-      });
-      createdCategories.push(createdCategory);
-      console.log(`✅ Service category created/updated: ${createdCategory.name} (ID: ${createdCategory.id})`);
-    }
-
-    // Create test users
-    console.log('\n👥 Creating test users...');
-
-    const hashedPassword = await bcrypt.hash('password123', 10);
-
-    // Create Hassan Pro
-    const hassanPro = await prisma.user.upsert({
-      where: { email: 'hassan@test.com' },
-      update: {},
-      create: {
-        email: 'hassan@test.com',
-        phone: '+212600000001',
-        passwordHash: hashedPassword,
-        role: 'PRO',
-        isEmailVerified: true,
+  for (const cityName of cities) {
+    // On génère un ID simple (ex: 'casablanca') pour la recherche
+    const cityId = cityName.toLowerCase().replace('é', 'e').replace('è', 'e');
+    
+    const city = await prisma.city.upsert({
+      where: { id: cityId }, // Assure-toi que ton modèle City a un ID string, sinon utilise 'name'
+      update: { name: cityName },
+      create: { 
+        id: cityId,
+        name: cityName,
+        isActive: true 
       },
     });
-    console.log(`✅ Pro user created: ${hassanPro.email}`);
-
-    // Create Hassan Pro Profile
-    await prisma.proProfile.upsert({
-      where: { userId: hassanPro.id },
-      update: {},
-      create: {
-        userId: hassanPro.id,
-        firstName: 'Hassan',
-        lastName: 'Pro',
-        profession: 'Ménage',
-        bio: 'Professional cleaner with 5 years experience',
-        cityId: createdCities.find(c => c.name === 'Marrakech')?.id,
-      },
-    });
-
-    // Create Jean Client
-    const jeanClient = await prisma.user.upsert({
-      where: { email: 'jean.client@test.com' },
-      update: {},
-      create: {
-        email: 'jean.client@test.com',
-        phone: '+212600000002',
-        passwordHash: hashedPassword,
-        role: 'CLIENT',
-        isEmailVerified: true,
-      },
-    });
-    console.log(`✅ Client user created: ${jeanClient.email}`);
-
-    // Create Jean Client Profile
-    await prisma.clientProfile.upsert({
-      where: { userId: jeanClient.id },
-      update: {},
-      create: {
-        userId: jeanClient.id,
-        firstName: 'Jean',
-        lastName: 'Client',
-      },
-    });
-
-    console.log('\n🎉 Seeding completed successfully!');
-    console.log(`📍 Cities seeded: ${createdCities.length}`);
-    console.log(`🛠️  Service categories seeded: ${createdCategories.length}`);
-    console.log(`👥 Test users created: 2`);
-
-  } catch (error) {
-    console.error('❌ Error seeding database:', error);
-    throw error;
+    cityMap.set(cityId, city);
   }
+  console.log('✅ Villes synchronisées');
+
+  // 2. Création des Catégories de Service
+  console.log('🛠️ Création des catégories...');
+  const categories = [
+    { id: 'plomberie', name: 'Plomberie' },
+    { id: 'electricite', name: 'Électricité' },
+    { id: 'menage', name: 'Ménage' },
+    { id: 'peinture', name: 'Peinture' },
+    { id: 'maconnerie', name: 'Maçonnerie' },
+  ];
+
+  for (const cat of categories) {
+    await prisma.serviceCategory.upsert({
+      where: { id: cat.id },
+      update: { name: cat.name },
+      create: { 
+        id: cat.id, 
+        name: cat.name,
+        isActive: true,
+        icon: 'Wrench' // Valeur par défaut
+      },
+    });
+  }
+  console.log('✅ Catégories synchronisées');
+
+  // 3. Gestion des Utilisateurs (Le Cœur du Problème)
+  console.log('👥 Gestion des utilisateurs de test...');
+  
+  // On génère le hash UNE SEULE FOIS pour être sûr qu'il est identique partout
+  const passwordRaw = 'password123';
+  const hashedPassword = await bcrypt.hash(passwordRaw, 10);
+
+  // --- HASSAN (PRO) ---
+  const hassan = await prisma.user.upsert({
+    where: { email: 'hassan@test.com' },
+    // 👇 C'EST ICI LA CORRECTION MAJEURE : On force la mise à jour du hash
+    update: {
+      passwordHash: hashedPassword,
+      role: 'PRO', // On s'assure que le rôle est bon
+    },
+    create: {
+      email: 'hassan@test.com',
+      passwordHash: hashedPassword,
+      role: 'PRO',
+      phone: '+212600000001',
+      isEmailVerified: true,
+      proProfile: {
+        create: {
+          firstName: 'Hassan',
+          lastName: 'Bricole',
+          profession: 'Plomberie',
+          bio: 'Artisan plombier sérieux avec 10 ans d\'expérience.',
+          cityId: 'casablanca', // Doit correspondre à un ID de ville créé plus haut
+        }
+      }
+    },
+  });
+  console.log(`👤 Hassan (PRO) mis à jour avec le mot de passe: ${passwordRaw}`);
+
+  // --- JEAN (CLIENT) ---
+  const jean = await prisma.user.upsert({
+    where: { email: 'jean.client@test.com' },
+    update: {
+      passwordHash: hashedPassword,
+      role: 'CLIENT',
+    },
+    create: {
+      email: 'jean.client@test.com',
+      passwordHash: hashedPassword,
+      role: 'CLIENT',
+      phone: '+212600000002',
+      isEmailVerified: true,
+      clientProfile: {
+        create: {
+          firstName: 'Jean',
+          lastName: 'Dupont',
+        }
+      }
+    },
+  });
+  console.log(`👤 Jean (CLIENT) mis à jour avec le mot de passe: ${passwordRaw}`);
+
+  console.log('🎉 Seed terminé avec succès !');
 }
 
 main()

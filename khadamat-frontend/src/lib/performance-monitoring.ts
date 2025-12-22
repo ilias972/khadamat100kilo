@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   PerformanceMetrics,
   PerformanceThresholdsMap,
@@ -13,13 +13,6 @@ import {
   MeasureEvent,
   PerformanceAnalyticsEvent
 } from '@/types/performance-types';
-
-/**
- * Production Performance Monitoring
- *
- * This module provides comprehensive performance monitoring for production environments
- * including Real User Monitoring (RUM), performance metrics tracking, and analytics integration.
- */
 
 /**
  * Performance thresholds for budget checking
@@ -59,6 +52,19 @@ export function usePerformanceMonitoring(): {
   }, []);
 
   /**
+   * ✅ CORRECTION : Déplacé AVANT calculatePerformanceScore
+   */
+  const getMetricScore = useCallback((metricName: keyof PerformanceMetrics, value: number): number => {
+    const threshold = PERFORMANCE_THRESHOLDS[metricName];
+    if (!threshold) return 100;
+
+    if (value <= threshold.good) return 100;
+    if (value <= threshold.needsImprovement) return 50;
+    if (value <= threshold.poor) return 25;
+    return 0;
+  }, []);
+
+  /**
    * Calculate performance score (0-100)
    */
   const calculatePerformanceScore = useCallback((metrics: PerformanceMetrics): number => {
@@ -84,19 +90,37 @@ export function usePerformanceMonitoring(): {
     });
 
     return metricCount > 0 ? Math.round(totalScore / metricCount) : 0;
-  }, [getMetricRating]);
+  }, [getMetricScore]); // ✅ Dépendance corrigée
 
   /**
-   * Get individual metric score
+   * ✅ CORRECTION : Déplacé AVANT le useEffect
    */
-  const getMetricScore = useCallback((metricName: keyof PerformanceMetrics, value: number): number => {
-    const threshold = PERFORMANCE_THRESHOLDS[metricName];
-    if (!threshold) return 100;
+  const sendToAnalytics = useCallback((metrics: PerformanceMetrics, score: number) => {
+    try {
+      // In a real implementation, this would send to your analytics service
+      if (typeof window !== 'undefined' && (window as { gtag?: Function }).gtag) {
+        (window as { gtag?: Function }).gtag?.('event', 'performance_metrics', {
+          ...metrics,
+          performance_score: score,
+          metric_id: 'web_vitals',
+          event_category: 'performance'
+        });
+      }
 
-    if (value <= threshold.good) return 100;
-    if (value <= threshold.needsImprovement) return 50;
-    if (value <= threshold.poor) return 25;
-    return 0;
+      // Log to console in development
+      if (process.env.NODE_ENV === 'development') {
+        const analyticsEvent: PerformanceAnalyticsEvent = {
+          metrics,
+          performanceScore: score,
+          metricId: 'web_vitals',
+          eventCategory: 'performance',
+          timestamp: new Date().toISOString()
+        };
+        console.log('[Performance Monitoring]', analyticsEvent);
+      }
+    } catch (error) {
+      console.error('Failed to send performance metrics:', error);
+    }
   }, []);
 
   /**
@@ -192,38 +216,7 @@ export function usePerformanceMonitoring(): {
     return () => {
       observer.disconnect();
     };
-  }, [calculatePerformanceScore]);
-
-  /**
-   * Send metrics to analytics service
-   */
-  const sendToAnalytics = useCallback((metrics: PerformanceMetrics, score: number) => {
-    try {
-      // In a real implementation, this would send to your analytics service
-      if (typeof window !== 'undefined' && (window as { gtag?: Function }).gtag) {
-        (window as { gtag?: Function }).gtag?.('event', 'performance_metrics', {
-          ...metrics,
-          performance_score: score,
-          metric_id: 'web_vitals',
-          event_category: 'performance'
-        });
-      }
-
-      // Log to console in development
-      if (process.env.NODE_ENV === 'development') {
-        const analyticsEvent: PerformanceAnalyticsEvent = {
-          metrics,
-          performanceScore: score,
-          metricId: 'web_vitals',
-          eventCategory: 'performance',
-          timestamp: new Date().toISOString()
-        };
-        console.log('[Performance Monitoring]', analyticsEvent);
-      }
-    } catch (error) {
-      console.error('Failed to send performance metrics:', error);
-    }
-  }, []);
+  }, [calculatePerformanceScore, sendToAnalytics]); // ✅ Ajout de sendToAnalytics
 
   return {
     metrics,
@@ -243,14 +236,14 @@ export function usePerformanceBudgetCheck(
   isWithinBudget: boolean;
   budgetStatus: Record<string, 'pass' | 'fail' | 'unknown'>;
 } {
-  const [isWithinBudget, setIsWithinBudget] = useState(true);
-  const [budgetStatus, setBudgetStatus] = useState<Record<string, 'pass' | 'fail' | 'unknown'>>({});
-
-  useEffect(() => {
+  // ✅ CORRECTION CRITIQUE : Utilisation de useMemo au lieu de useState+useEffect
+  // Cela évite l'erreur "Calling setState synchronously within an effect"
+  const result = useMemo(() => {
     if (!metrics) {
-      setIsWithinBudget(true);
-      setBudgetStatus({});
-      return;
+      return {
+        isWithinBudget: true,
+        budgetStatus: {}
+      };
     }
 
     const newBudgetStatus: Record<string, 'pass' | 'fail' | 'unknown'> = {};
@@ -279,14 +272,13 @@ export function usePerformanceBudgetCheck(
       }
     });
 
-    setIsWithinBudget(allWithinBudget);
-    setBudgetStatus(newBudgetStatus);
+    return {
+      isWithinBudget: allWithinBudget,
+      budgetStatus: newBudgetStatus
+    };
   }, [metrics, budgets]);
 
-  return {
-    isWithinBudget,
-    budgetStatus
-  };
+  return result;
 }
 
 /**
@@ -296,8 +288,7 @@ export function useComponentPerformance(
   componentName: string,
   dependencies: React.DependencyList = []
 ): (callback: () => void) => void {
-  const renderTimesRef = React.useRef<number[]>([]);
-  const lastRenderTimeRef = React.useRef<number>(0);
+  const renderTimesRef = useRef<number[]>([]);
 
   useEffect(() => {
     const startTime = performance.now();
@@ -306,7 +297,6 @@ export function useComponentPerformance(
       const renderTime = endTime - startTime;
 
       renderTimesRef.current.push(renderTime);
-      lastRenderTimeRef.current = renderTime;
 
       // Keep only last 10 render times
       if (renderTimesRef.current.length > 10) {
@@ -314,12 +304,14 @@ export function useComponentPerformance(
       }
 
       if (process.env.NODE_ENV === 'development' && renderTime > 5) {
+        const avg = renderTimesRef.current.reduce((a: number, b: number) => a + b, 0) / renderTimesRef.current.length;
         console.log(
           `[Component Perf] ${componentName}: ${renderTime.toFixed(2)}ms ` +
-          `(avg: ${(renderTimesRef.current.reduce((a: number, b: number) => a + b, 0) / renderTimesRef.current.length).toFixed(2)}ms)`
+          `(avg: ${avg.toFixed(2)}ms)`
         );
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, dependencies);
 
   /**

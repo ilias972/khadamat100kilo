@@ -5,6 +5,8 @@ import { ToastProvider } from '@/lib/toast-context';
 import { PageTransitionProvider } from '@/components/ui/page-transition';
 import { Providers } from '@/lib/providers';
 import { Toaster } from 'sonner';
+// 👇 1. IMPORT DU FOOTER
+import { Footer } from '@/components/layout/footer';
 
 const inter = { className: 'font-sans', variable: 'font-sans' };
 
@@ -38,25 +40,26 @@ export default function RootLayout({
   return (
     <html lang="fr" className={inter.variable} suppressHydrationWarning={true}>
       <head>
-        {/* Preconnect */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-
-        {/* Icons */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.json" />
-        
-        {/* ❌ Suppression du tag <style> qui causait l'erreur d'hydratation */}
       </head>
       <body className={`${inter.className} antialiased relative bg-moroccan-pattern`}>
         <Providers>
-          <div className="relative z-10">
+          <div className="relative z-10 flex flex-col min-h-screen"> 
+            {/* 👆 J'ai ajouté flex flex-col min-h-screen pour que le footer reste en bas */}
+            
             <PageTransitionProvider defaultType="moroccan-fade">
               <ToastProvider>
                 <AuthProvider>
-                  {children}
+                  <main className="flex-grow">
+                    {children}
+                  </main>
+                  {/* 👇 2. PLACEMENT DU FOOTER ICI */}
+                  <Footer /> 
                 </AuthProvider>
               </ToastProvider>
             </PageTransitionProvider>

@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { microInteractions, entranceAnimations } from '@/lib/animations';
+// import { Button } from '@/components/ui/button'; // Supprimé car inutilisé
+// import { microInteractions, entranceAnimations } from '@/lib/animations'; // Supprimé car inutilisé
 import {
   Plus,
   MessageSquare,
@@ -40,7 +40,6 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
   className
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [visibleActions, setVisibleActions] = useState<QuickAction[]>([]);
   const [isMinimized, setIsMinimized] = useState(false);
 
   // Mouse tracking for 3D effect
@@ -49,81 +48,75 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
   const rotateX = useTransform(mouseY, [-0.5, 0.5], [10, -10]);
   const rotateY = useTransform(mouseX, [-0.5, 0.5], [-10, 10]);
 
-  // Define all available actions
-  const allActions: QuickAction[] = [
-    {
-      id: 'search',
-      label: 'Rechercher',
-      icon: Search,
-      href: '/services',
-      color: 'text-primary-600',
-      bgColor: 'bg-primary-500',
-      priority: 10,
-      context: 'home'
-    },
-    {
-      id: 'book',
-      label: 'Réserver',
-      icon: Plus,
-      href: '/services',
-      color: 'text-white',
-      bgColor: 'bg-primary-500',
-      priority: 9,
-      context: 'services'
-    },
-    {
-      id: 'favorites',
-      label: 'Favoris',
-      icon: Heart,
-      href: user ? '/dashboard/client/favorites' : '/auth/login',
-      color: 'text-error-600',
-      bgColor: 'bg-error-500',
-      priority: 8,
-      context: 'dashboard'
-    },
-    {
-      id: 'messages',
-      label: 'Messages',
-      icon: MessageSquare,
-      href: user ? '/dashboard/client/messages' : '/auth/login',
-      color: 'text-success-600',
-      bgColor: 'bg-success-500',
-      priority: 7,
-      context: 'dashboard'
-    },
-    {
-      id: 'location',
-      label: 'Carte',
-      icon: MapPin,
-      href: '/services?view=map',
-      color: 'text-info-600',
-      bgColor: 'bg-info-500',
-      priority: 6,
-      context: 'services'
-    },
-    {
-      id: 'support',
-      label: 'Support',
-      icon: Phone,
-      href: '/contact',
-      color: 'text-warning-600',
-      bgColor: 'bg-warning-500',
-      priority: 5
-    }
-  ];
+  // ✅ CORRECTION : Utilisation de useMemo au lieu de useState + useEffect
+  // Cela évite l'erreur "Calling setState synchronously within an effect"
+  const visibleActions = useMemo(() => {
+    const allActions: QuickAction[] = [
+      {
+        id: 'search',
+        label: 'Rechercher',
+        icon: Search,
+        href: '/services',
+        color: 'text-primary-600',
+        bgColor: 'bg-primary-500',
+        priority: 10,
+        context: 'home'
+      },
+      {
+        id: 'book',
+        label: 'Réserver',
+        icon: Plus,
+        href: '/services',
+        color: 'text-white',
+        bgColor: 'bg-primary-500',
+        priority: 9,
+        context: 'services'
+      },
+      {
+        id: 'favorites',
+        label: 'Favoris',
+        icon: Heart,
+        href: user ? '/dashboard/client/favorites' : '/auth/login',
+        color: 'text-error-600',
+        bgColor: 'bg-error-500',
+        priority: 8,
+        context: 'dashboard'
+      },
+      {
+        id: 'messages',
+        label: 'Messages',
+        icon: MessageSquare,
+        href: user ? '/dashboard/client/messages' : '/auth/login',
+        color: 'text-success-600',
+        bgColor: 'bg-success-500',
+        priority: 7,
+        context: 'dashboard'
+      },
+      {
+        id: 'location',
+        label: 'Carte',
+        icon: MapPin,
+        href: '/services?view=map',
+        color: 'text-info-600',
+        bgColor: 'bg-info-500',
+        priority: 6,
+        context: 'services'
+      },
+      {
+        id: 'support',
+        label: 'Support',
+        icon: Phone,
+        href: '/contact',
+        color: 'text-warning-600',
+        bgColor: 'bg-warning-500',
+        priority: 5
+      }
+    ];
 
-  // Filter actions based on context and user state
-  useEffect(() => {
-    const contextActions = allActions.filter(action =>
-      !action.context || action.context === context
-    );
-
-    // Sort by priority and take top 4
-    const sortedActions = contextActions
+    return allActions
+      .filter(action => !action.context || action.context === context)
       .sort((a, b) => b.priority - a.priority)
       .slice(0, 4);
-
-    setVisibleActions(sortedActions);
   }, [context, user]);
 
   // Auto-minimize after 10 seconds of inactivity

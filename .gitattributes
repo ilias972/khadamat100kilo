@@ -1,6 +1,17 @@
-Plaintext
+* text=auto
+*.js text eol=lf
+*.jsx text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.md text eol=lf
 
-# Enforce LF for all files
-* text=auto eol=lf
-Keep CRLF for Windows-specific scripts (if any remain)
-*.{cmd,[cC][mM][dD]} text eol=crlf *.{bat,[bB][aA][tT]} text eol=crlf
+# Images
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg text

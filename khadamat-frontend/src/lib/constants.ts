@@ -198,3 +198,36 @@ export const API_ENDPOINTS = {
   professionals: '/pros',
   services: '/services',
 };
+
+export const CITIES_LIST = [
+  'Casablanca',
+  'Rabat',
+  'Marrakech',
+  'Fès',
+  'Tanger',
+  'Agadir',
+  'Meknès',
+  'Oujda',
+  'Kénitra',
+  'Tétouan',
+  'Salé',
+  'Mohammedia',
+  'El Jadida',
+  'Béni Mellal',
+  'Nador'
+];
+
+export const SERVICES_LIST = [
+  'Plomberie',
+  'Électricité',
+  'Ménage',
+  'Peinture',
+  'Jardinage',
+  'Bricolage',
+  'Maçonnerie',
+  'Menuiserie',
+  'Climatisation',
+  'Déménagement',
+  'Rénovation',
+  'Serrurerie'
+];

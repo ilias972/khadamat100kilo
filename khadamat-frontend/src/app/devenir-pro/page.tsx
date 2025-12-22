@@ -115,8 +115,6 @@ export default function DevenirProPage() {
           </div>
         </section>
       </main>
-
-      <Footer />
     </div>
   );
 }

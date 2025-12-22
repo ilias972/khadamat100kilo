@@ -176,8 +176,6 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

@@ -4,8 +4,6 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   PerformanceMetrics,
   PerformanceRating,
-  BundleSizeInfo,
-  ConnectionInfo,
   UsePerformanceMonitoringReturn,
   PerformanceThresholdsMap
 } from '@/types/performance-types';
@@ -30,6 +28,24 @@ export const usePerformanceMonitoring = (): UsePerformanceMonitoringReturn => {
   });
 
   const [isSupported, setIsSupported] = useState(false);
+
+  // ✅ CORRECTION : reportMetric est défini AVANT le useEffect qui l'utilise
+  const reportMetric = useCallback((name: string, value: number) => {
+    // In production, send to analytics service
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[Performance] ${name}:`, value);
+    }
+
+    // Send to analytics (e.g., Google Analytics, custom endpoint)
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', name, {
+        value: Math.round(value),
+        metric_id: name,
+        metric_value: value,
+        metric_delta: value
+      });
+    }
+  }, []);
 
   useEffect(() => {
     // Check if Performance API is supported
@@ -107,24 +123,7 @@ export const usePerformanceMonitoring = (): UsePerformanceMonitoringReturn => {
         console.warn('PerformanceObserver not supported:', error);
       }
     }
-  }, []);
-
-  const reportMetric = useCallback((name: string, value: number) => {
-    // In production, send to analytics service
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[Performance] ${name}:`, value);
-    }
-
-    // Send to analytics (e.g., Google Analytics, custom endpoint)
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', name, {
-        value: Math.round(value),
-        metric_id: name,
-        metric_value: value,
-        metric_delta: value
-      });
-    }
-  }, []);
+  }, [reportMetric]); // ✅ reportMetric ajouté aux dépendances
 
   const getMetricRating = useCallback((metricName: keyof PerformanceMetrics, value: number): PerformanceRating => {
     const threshold = THRESHOLDS[metricName as keyof PerformanceThresholdsMap];
@@ -235,8 +234,8 @@ export const performanceUtils = {
 
   // Request Idle Callback wrapper
   requestIdleCallback: (callback: () => void, options?: { timeout?: number }) => {
-    if ('requestIdleCallback' in window) {
-      return window.requestIdleCallback(callback, options);
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      return (window as any).requestIdleCallback(callback, options);
     } else {
       return setTimeout(callback, 1);
     }
@@ -244,8 +243,8 @@ export const performanceUtils = {
 
   // Cancel Idle Callback wrapper
   cancelIdleCallback: (id: number) => {
-    if ('cancelIdleCallback' in window) {
-      window.cancelIdleCallback(id);
+    if (typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+      (window as any).cancelIdleCallback(id);
     } else {
       clearTimeout(id);
     }
